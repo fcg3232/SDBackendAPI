@@ -1,7 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const bodyParser = require("body-parser");
-const logger = require("morgan");
+// const logger = require("morgan");
 const path = require("path");
 const multer = require("multer");
 const mongoose = require("mongoose");
@@ -11,7 +11,7 @@ const orders = require("./routes/orders");
 const stripe = require("./routes/stripe");
 const users = require("./routes/users");
 const productsRoute = require("./routes/products");
-const { Property } = require("./models/personal");
+// const { Property } = require("./models/personal");
 const personaldb = require("./routes/personaldb");
 const propertydb = require("./routes/propertiesdb");
 const propllc = require("./routes/propLLC");
@@ -25,11 +25,11 @@ const TermsofCondition = require("./routes/TermsofCondition");
 const buyerOrder = require("./routes/buyerOrder");
 const sellerOrder = require("./routes/sellerOrder");
 const orderMatching = require("./routes/orderMatching");
-const Web3 = require("web3");
-const { auth, isUser, isAdmin } = require("./middleware/auth");
-const { User } = require("./models/user");
-const Infura_url = process.env.Infura;
-const web3 = new Web3(Infura_url);
+// const Web3 = require("web3");
+// const { auth, isUser, isAdmin } = require("./middleware/auth");
+// const { User } = require("./models/user");
+// const Infura_url = process.env.Infura;
+// const web3 = new Web3(Infura_url);
 
 // const findAddress = async(req, res) => {
 // 	const AdminWallet =   await User.findById({_id:"656846a19f1f9aedaabadcb4"});
@@ -244,57 +244,57 @@ app.use("/api/orderMatching", orderMatching);
 // });
 
 // console.log(Property);
-app.get("/orderMatching", (req, res) => {
-  res.send(orderMatching);
-});
-app.get("/buyerOrder", (req, res) => {
-  res.send(buyerOrder);
-});
-app.get("/sellerOrder", (req, res) => {
-  res.send(sellerOrder);
-});
+// app.get("/orderMatching", (req, res) => {
+//   res.send(orderMatching);
+// });
+// app.get("/buyerOrder", (req, res) => {
+//   res.send(buyerOrder);
+// });
+// app.get("/sellerOrder", (req, res) => {
+//   res.send(sellerOrder);
+// });
 
-app.get("/TermsofCondition", (req, res) => {
-  res.send(TermsofCondition);
-});
+// app.get("/TermsofCondition", (req, res) => {
+//   res.send(TermsofCondition);
+// });
 
-app.get("/sendemail", (req, res) => {
-  res.send("sending mail");
-});
-app.get("/register", (req, res) => {
-  res.send("sending mail");
-});
+// app.get("/sendemail", (req, res) => {
+//   res.send("sending mail");
+// });
+// app.get("/register", (req, res) => {
+//   res.send("sending mail");
+// });
 
-app.get("/products", (req, res) => {
-  res.send(products);
-});
+// app.get("/products", (req, res) => {
+//   res.send(products);
+// });
 
-app.get("/personaldb", (req, res) => {
-  res.send(personaldb);
-});
+// app.get("/personaldb", (req, res) => {
+//   res.send(personaldb);
+// });
 
-app.get("/personaldb", (req, res) => {
-  res.send(personaldb);
-});
+// app.get("/personaldb", (req, res) => {
+//   res.send(personaldb);
+// });
 
-app.get("/berbix", (req, res) => {
-  res.send(berbix);
-});
+// app.get("/berbix", (req, res) => {
+//   res.send(berbix);
+// });
 
-app.get("/propLLC", (req, res) => {
-  res.send(propLLC);
-});
+// app.get("/propLLC", (req, res) => {
+//   res.send(propLLC);
+// });
 
-app.get("/propertyInfo", (req, res) => {
-  res.send(propertyInfo);
-});
-app.get("/blogdb", (req, res) => {
-  res.send(blogdb);
-});
+// app.get("/propertyInfo", (req, res) => {
+//   res.send(propertyInfo);
+// });
+// app.get("/blogdb", (req, res) => {
+//   res.send(blogdb);
+// });
 
-app.get("/users", (req, res) => {
-  res.send(users);
-});
+// app.get("/users", (req, res) => {
+//   res.send(users);
+// });
 
 const url = process.env.DB_URI;
 const port = process.env.PORT || 5000;
