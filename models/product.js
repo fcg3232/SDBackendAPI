@@ -1,9 +1,10 @@
 const mongoose = require("mongoose");
 
-const productSchema = new mongoose.Schema(
+const propertySchema = new mongoose.Schema(
   {
     uid: {type: String},
     name: { type: String,required: true, minlength: 3, maxlength: 10240 },
+    AdminWallet: {type: String, required: true},
     location: { type: String,required: true, minlength: 3, maxlength: 10240 },
     propertytype : { type: String,required: true, minlength: 3, maxlength: 10240 },
     bedroom:{ type: Number,required: true},
@@ -13,10 +14,11 @@ const productSchema = new mongoose.Schema(
     date: {type: Date, default: new Date()},
     desc: { type: String},
     image: { type: Object, required: true },
+    tokenHolder: {type: [String]},
   },
   { timestamps: true }
 );
 
-const Product = mongoose.model("Product", productSchema);
+const Product = mongoose.model("Product", propertySchema);
 
 exports.Product = Product;

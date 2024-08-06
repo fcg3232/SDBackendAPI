@@ -11,6 +11,9 @@ router.post("/", async (req, res) => {
             SellersAddress: req.body.SellersAddress,
             Number_of_Tokens: req.body.Number_of_Tokens,
             Price_of_Tokens: req.body.Price_of_Tokens,
+            r:req.body.r,
+            s:req.body.s,
+            v:req.body.v,
             expireIn:  new Date().getTime() + 864000 * 1000,
             Statue: req.body.Statue,
         });
@@ -35,6 +38,27 @@ router.put("/:id",isUser,isAdmin, async (req, res) => {
     } catch (err) {
       res.status(500).send(err);
     }
+  });
+
+  router.patch("/:id", async (req, res) => {
+    try {
+      const ord = await SellersOrder.findById(req.params.id);
+      if (!ord) return res.status(404).send("Seller not found...");
+
+      const updatedord = await SellersOrder.findByIdAndUpdate(
+        req.params.id,
+        req.body,
+        {
+          new: true,
+        }
+      );
+      res.send(updatedord);
+  
+    } catch (error) {
+      res.status(500).send("Error: " + error.message);
+      console.log(error.message);
+    }
+  
   });
 
   //DELETE

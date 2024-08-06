@@ -6,6 +6,9 @@ const sellersSchema = new mongoose.Schema(
     SellersAddress: { type: String, required: true},
     Number_of_Tokens: { type: Number, required: true },
     Price_of_Tokens: { type: Number, required: true },
+    r:{ type: String, required: true},
+    s:{ type: String, required: true},
+    v:{ type: Number, required: true},
     expireIn:{type: Number},
     Statue: { type: Boolean, default: false }
   },
