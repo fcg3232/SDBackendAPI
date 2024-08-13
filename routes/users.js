@@ -44,13 +44,12 @@ router.get("/find/:id", async (req, res) => {
       privateKey: user.privateKey,
       isAdmin: user.isAdmin,
       isAccept: user.isAccept,
+      ...user._doc,
     });
   } catch (error) {
     res.status(500).send(error);
   }
 });
-
-
 
 router.put("/isaccept/:id", isUser, async (req, res) => {
   try {
@@ -107,6 +106,27 @@ router.put("/:id", isUser, async (req, res) => {
       email: updatedUser.email,
       isAdmin: updatedUser.isAdmin,
       isAccept: updatedUser.isAccept,
+    });
+  } catch (error) {
+    res.status(500).send(error);
+  }
+});
+
+// PATCH UPDATE USER
+router.patch("/:id", isUser, async (req, res) => {
+  try {
+    const { kycVerified, kycVerificationId, kycFormUrl } = req.body;
+
+    const updatedUser = await User.findByIdAndUpdate(req.params.id, {
+      kycVerified,
+      kycVerificationId,
+      kycFormUrl,
+    });
+
+    res.status(200).send({
+      ...updatedUser._doc,
+      kycVerificationId,
+      kycFormUrl,
     });
   } catch (error) {
     res.status(500).send(error);
