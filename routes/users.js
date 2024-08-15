@@ -44,7 +44,9 @@ router.get("/find/:id", async (req, res) => {
       privateKey: user.privateKey,
       isAdmin: user.isAdmin,
       isAccept: user.isAccept,
-      ...user._doc,
+      kycVerified: user.kycVerified,
+      kycVerificationId: user.kycVerificationId,
+      kycFormUrl: user.kycFormUrl,
     });
   } catch (error) {
     res.status(500).send(error);
