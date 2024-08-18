@@ -8,6 +8,8 @@ const generateAuthToken = (user) => {
       name: user.name,
       email: user.email,
       isAdmin: user.isAdmin,
+      kycVerified: user.kycVerified,
+      kycVerificationId: user.kycVerificationId,
     },
     jwtSecretKey
   );
