@@ -73,8 +73,6 @@ router.post("/", async (req, res) => {
       if (error) {
         console.log("sending mail error", error)
         return res.status(400).send("sending mail error...");
-      } else {
-        return res.status(200).send("Please Check you email");
       }
     })
   })
