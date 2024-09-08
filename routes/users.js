@@ -37,21 +37,45 @@ router.get("/find/:id", async (req, res) => {
 
     res.status(200).send({
       _id: user._id,
-      name: user.name,
+      first_name: user.first_name,
+      last_name: user.last_name,
       phone: user.phone,
       email: user.email,
+      dateofBirth: user.dateofBirth,
+      residence_country: user.residence_country,
+      nationality: user.nationality,
       walletAddress: user.walletAddress,
       privateKey: user.privateKey,
+      applicant_id: user.applicant_id,
+      verification_id: user.verification_id,
       isAdmin: user.isAdmin,
       isAccept: user.isAccept,
-      kycVerified: user.kycVerified,
-      kycVerificationId: user.kycVerificationId,
-      kycFormUrl: user.kycFormUrl,
     });
   } catch (error) {
     res.status(500).send(error);
   }
 });
+
+// PATCH UPDATE USER
+router.patch("/:id", isUser, async (req, res) => {
+  try {
+    const {applicant_id, verification_id} = req.body;
+
+    const updatedUser = await User.findByIdAndUpdate(req.params.id, {
+      applicant_id,
+      verification_id
+    });
+
+    res.status(200).send({
+      ...updatedUser._doc,
+      applicant_id,
+      verification_id
+    });
+  } catch (error) {
+    res.status(500).send(error);
+  }
+});
+
 
 router.put("/isaccept/:id", isUser, async (req, res) => {
   try {
@@ -92,9 +116,13 @@ router.put("/:id", isUser, async (req, res) => {
     const updatedUser = await User.findByIdAndUpdate(
       req.params.id,
       {
-        name: req.body.name,
+        first_name: req.body.first_name,
+        last_name: req.body.last_name,
         phone: req.body.phone,
         email: req.body.email,
+        dateofBirth: req.body.dateofBirth,
+        residence_country: req.body.residence_country,
+        nationality: req.body.nationality,
         isAdmin: req.body.isAdmin,
         isAccept: req.body.isAccept,
         password: user.password,
@@ -104,31 +132,14 @@ router.put("/:id", isUser, async (req, res) => {
 
     res.status(200).send({
       _id: updatedUser._id,
-      name: updatedUser.name,
+      first_name: updatedUser.first_name,
+      last_name: updatedUser.last_name,
       email: updatedUser.email,
+      dateofBirth: updatedUser.dateofBirth,
+      residence_country: updatedUser.residence_country,
+      nationality: updatedUser.nationality,
       isAdmin: updatedUser.isAdmin,
       isAccept: updatedUser.isAccept,
-    });
-  } catch (error) {
-    res.status(500).send(error);
-  }
-});
-
-// PATCH UPDATE USER
-router.patch("/:id", isUser, async (req, res) => {
-  try {
-    const { kycVerified, kycVerificationId, kycFormUrl } = req.body;
-
-    const updatedUser = await User.findByIdAndUpdate(req.params.id, {
-      kycVerified,
-      kycVerificationId,
-      kycFormUrl,
-    });
-
-    res.status(200).send({
-      ...updatedUser._doc,
-      kycVerificationId,
-      kycFormUrl,
     });
   } catch (error) {
     res.status(500).send(error);

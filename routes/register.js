@@ -32,9 +32,13 @@ const createAccount = async () => {
 
 router.post("/", async (req, res) => {
   const schema = Joi.object({
-    name: Joi.string().min(3).max(100).required(),
+    first_name: Joi.string().min(3).max(100).required(),
+    last_name: Joi.string().min(3).max(100).required(),
     phone: Joi.string().min(3).max(100).required(),
     email: Joi.string().min(3).max(200).required().email(),
+    dateofBirth: Joi.string().min(3).max(200).required(),
+    residence_country: Joi.string().min(2).max(100).required(),
+    nationality: Joi.string().min(2).max(100).required(),
     password: Joi.string().min(6).max(200).required(),
   });
 
@@ -49,9 +53,13 @@ router.post("/", async (req, res) => {
   // const { name,phone, email, password, adminAddress, privateKey } = req.body;
   createAccount().then(async (ethereumAccount) => {
     user = new User({
-      name: req.body.name,
+      first_name: req.body.first_name,
+      last_name: req.body.last_name,
       phone: req.body.phone,
       email: req.body.email,
+      dateofBirth: req.body.dateofBirth,
+      residence_country: req.body.residence_country,
+      nationality: req.body.nationality,
       password: req.body.password,
       walletAddress: ethereumAccount.address,
       privateKey: ethereumAccount.privateKey,
@@ -64,7 +72,7 @@ router.post("/", async (req, res) => {
       html: `<h3>Your Wallet PrivateKey.
       </h3>
       <br/>
-      <p>Please Save this and import wallet address in our wallet.</p>
+      <p>Please Save this and import wallet address in your wallet.</p>
       <br/>
       <a> ${ethereumAccount.privateKey}</a>
        `,
@@ -73,6 +81,8 @@ router.post("/", async (req, res) => {
       if (error) {
         console.log("sending mail error", error)
         return res.status(400).send("sending mail error...");
+      } else {
+        return res.status(200).send("Please Check you email");
       }
     })
   })
@@ -85,7 +95,7 @@ router.post("/", async (req, res) => {
 
   const token = generateAuthToken(user);
 
-  return res.send(token);
+  res.send(token);
 });
 
 module.exports = router;
