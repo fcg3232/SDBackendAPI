@@ -20,7 +20,7 @@ jobs:
           id: build-docker-image
           run: |
             ls -la 
-            docker build . -f Dockerfile -t dhruvin30/sdbackendapi:latest
+            docker build . -f Dockerfile -t ${{secrets.DOCKERHUB_USERNAME}}/sdbackendapi:latest
         - name: push the docker image
           id: push-docker-image
           run: docker push ${{secrets.DOCKERHUB_USERNAME}}/sdbackendapi:latest
