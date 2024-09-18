@@ -70,19 +70,19 @@ router.post("/kyc-callback", async (req, res) => {
     return res.status(400).send("Raw body is missing");
   }
 
-  // Create HMAC using raw body, not parsed body
-  const hmac = crypto.createHmac(
-    "sha512",
-    "e31169640d9147493929ab77c9128470b16d" // Replace with your actual secret
-  );
-  const signature = hmac
-    .update(Buffer.from(req.rawBody, "utf-8"))
-    .digest("hex");
+  // Step 1: Base64 encode the raw body
+  const encodedBody = Buffer.from(req.rawBody, "utf-8").toString("base64");
+
+  // Step 2: Create the HMAC SHA-512 hash using the encoded body and your API token
+  const apiToken = "e31169640d9147493929ab77c9128470b16d"; // Replace with your actual API token
+  const hmac = crypto.createHmac("sha512", apiToken);
+  const calculatedHash = hmac.update(encodedBody).digest("hex");
 
   console.log("x-data-integrity header:", req.headers["x-data-integrity"]);
-  console.log("Calculated signature:", signature);
+  console.log("Calculated hash:", calculatedHash);
 
-  if (req.headers["x-data-integrity"] === signature) {
+  // Step 3: Compare the calculated hash with the x-data-integrity header
+  if (req.headers["x-data-integrity"] === calculatedHash) {
     console.log("Callback verification successful");
 
     const { applicant_id, verification_status, verification_id } = req.body;

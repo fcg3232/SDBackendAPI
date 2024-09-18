@@ -44,13 +44,19 @@ app.use(
   express.json({ extended: true, parameterLimit: 1000000000, limit: "50000mb" })
 );
 
-app.use(
-  express.json({
-    verify: (req, res, buf) => {
-      req.rawBody = buf.toString(); // Store raw body for signature calculation
-    },
-  })
-);
+app.use((req, res, next) => {
+  let rawData = "";
+  req.on("data", (chunk) => {
+    rawData += chunk;
+  });
+
+  req.on("end", () => {
+    req.rawBody = rawData; // Store raw body as a string for later use
+    next();
+  });
+});
+
+app.use(express.json());
 
 // app.use(express.static(path.join(__dirname, "./frontend/dist")));
 
