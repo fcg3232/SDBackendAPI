@@ -104,6 +104,8 @@ router.post("/kyc-callback", async (req, res) => {
       res.status(500).send("Error processing callback");
     }
   } else {
+    console.log("INSIDE ELSE REQ=> ", req);
+    console.log("INSIDE ELSE RES=>", res);
     console.error("Callback verification failed");
     res.status(400).send("Invalid callback signature");
   }
