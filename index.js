@@ -41,28 +41,7 @@ app.use(
 );
 
 app.use(cors());
-// Middleware to capture raw body
-app.use((req, res, next) => {
-  let rawData = "";
 
-  req.on("data", (chunk) => {
-    rawData += chunk;
-  });
-
-  req.on("end", () => {
-    if (rawData) {
-      req.rawBody = rawData;
-    } else {
-      req.rawBody = ""; // In case no body data is provided
-    }
-    next(); // Move to the next middleware
-  });
-
-  req.on("error", (err) => {
-    console.error("Error capturing raw body:", err);
-    next(err); // Forward the error
-  });
-});
 app.use(
   express.json({ extended: true, parameterLimit: 1000000000, limit: "50000mb" })
 );
