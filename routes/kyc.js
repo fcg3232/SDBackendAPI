@@ -62,8 +62,9 @@ router.post("/", async (req, res) => {
 });
 
 router.post("/kyc-callback", async (req, res) => {
-  console.log("req=>", req);
-  console.log("res=>", res);
+  console.log("req body=>", req.body);
+  console.log("req headers=>", req.headers);
+  // console.log("res=>", res);
   const hmac = crypto.createHmac(
     "sha512",
     "e31169640d9147493929ab77c9128470b16d"
@@ -104,8 +105,9 @@ router.post("/kyc-callback", async (req, res) => {
       res.status(500).send("Error processing callback");
     }
   } else {
-    console.log("INSIDE ELSE REQ=> ", req);
-    console.log("INSIDE ELSE RES=>", res);
+    console.log("INSIDE ELSE REQ=> req.header=>", req.body);
+    console.log("INSIDE ELSE REQ=> req.header=>", req.headers);
+    // console.log("INSIDE ELSE RES=>", res);
     console.error("Callback verification failed>>>>>>>>>>");
     res.status(400).send("Invalid callback signature>>>");
   }
