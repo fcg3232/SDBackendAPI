@@ -90,7 +90,7 @@ router.post("/kyc-callback", async (req, res) => {
       verification_attempts_left,
       verifications,
       applicant,
-    } = req.body;
+    } = JSON.parse(rawBody);
 
     try {
       console.log("req.body", req.body);
