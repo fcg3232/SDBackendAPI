@@ -87,13 +87,13 @@ router.post("/kyc-callback", async (req, res) => {
       applicant_id,
       verification_id,
       verification_status,
-      verification_attempts_left,
+      verification_attempts_left = null,
       verifications,
       applicant,
     } = JSON.parse(rawBody);
 
     try {
-      console.log("req.body", req.body);
+      console.log("JSON.parse(rawBody)", JSON.parse(rawBody));
       let kycRecord = await Kyc.findOne({ applicant_id: applicant_id });
 
       // Step 3: Handle `VERIFICATION_STATUS_CHANGED`
