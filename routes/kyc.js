@@ -152,6 +152,8 @@ router.post("/kyc-callback", async (req, res) => {
         kycRecord.verification_id = verification_id;
         kycRecord.status = status;
         kycRecord.verified = verified;
+        kycRecord.verification_attempts_left =
+          verification_attempts_left === null ? 0 : verification_attempts_left;
 
         // Conditionally update verifications only if the status is rejected
         if (status === "rejected") {
