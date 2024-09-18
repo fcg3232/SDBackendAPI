@@ -13,6 +13,7 @@ const applicantSchema = new mongoose.Schema({
   applicant_id: { type: String, required: true },
   first_name: { type: String },
   last_name: { type: String },
+  decline_reasons: { type: [String] },
   documents: { type: [documentSchema], default: [] },
 });
 
