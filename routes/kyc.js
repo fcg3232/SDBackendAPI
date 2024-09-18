@@ -4,6 +4,7 @@ const { auth, isUser, isAdmin } = require("../middleware/auth");
 const moment = require("moment");
 const router = require("express").Router();
 const crypto = require("crypto");
+const { User } = require("../models/user");
 
 //GET ALL USERS
 router.get("/", isAdmin, async (req, res) => {
@@ -83,27 +84,46 @@ router.post("/kyc-callback", async (req, res) => {
   // Step 4: Compare the calculated hash with the x-data-integrity header
   if (req.headers["x-data-integrity"] === calculatedHash) {
     console.log("Callback verification successful");
-
     const { applicant_id, verification_status, verification_id } =
       JSON.parse(rawBody);
     try {
-      const updatedKyc = await Kyc.findOneAndUpdate(
+      // Step 5: Update or Create KYC Record in KYC Collection
+      let kycRecord = await Kyc.findOneAndUpdate(
         { applicant_id: applicant_id },
         {
           verification_id: verification_id,
           status: verification_status,
         },
-        { new: true, upsert: false } // Return the updated document, don't insert if not found
+        { new: true, upsert: true } // Upsert ensures new KYC records are created if not found
       );
 
-      if (!updatedKyc) {
-        return res.status(404).send("KYC record not found");
+      if (!kycRecord) {
+        kycRecord = await Kyc.create({
+          applicant_id: applicant_id,
+          verification_id: verification_id,
+          status: verification_status,
+        });
       }
 
-      console.log("KYC verification updated in MongoDB:", updatedKyc);
+      console.log("KYC verification updated in MongoDB:", kycRecord);
+
+      // Step 6: Update the User Model to Reference the KYC Record
+      const user = await User.findOneAndUpdate(
+        { applicant_id: applicant_id }, // Assuming applicant_id is used in User collection
+        { kycId: kycRecord._id }, // Update the user's kycId field to reference the KYC record
+        { new: true }
+      );
+
+      if (!user) {
+        console.error("User not found for applicant_id:", applicant_id);
+        return res.status(404).send("User not found");
+      }
+
+      console.log("User KYC reference updated:", user);
+
       res.status(200).send("Callback received and processed");
     } catch (error) {
-      console.error("Error updating KYC verification:", error);
+      console.error("Error processing KYC callback:", error);
       res.status(500).send("Error processing callback");
     }
   } else {
