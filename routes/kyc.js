@@ -64,13 +64,15 @@ router.post("/", async (req, res) => {
 router.post("/kyc-callback", async (req, res) => {
   console.log("req body=>", req.body);
   console.log("req headers=>", req.headers);
-  // console.log("res=>", res);
+
+  // Create HMAC using raw body, not parsed body
   const hmac = crypto.createHmac(
     "sha512",
-    "e31169640d9147493929ab77c9128470b16d"
+    "e31169640d9147493929ab77c9128470b16d" // Replace with your actual secret
   );
-  const rawBody = JSON.stringify(req.body);
-  const signature = hmac.update(Buffer.from(rawBody, "utf-8")).digest("hex");
+  const signature = hmac
+    .update(Buffer.from(req.rawBody, "utf-8"))
+    .digest("hex");
 
   console.log("x-data-integrity header:", req.headers["x-data-integrity"]);
   console.log("Calculated signature:", signature);
@@ -84,10 +86,6 @@ router.post("/kyc-callback", async (req, res) => {
       const updatedKyc = await Kyc.findOneAndUpdate(
         { applicant_id: applicant_id },
         {
-          // status: verification_status,
-          // verification_id: verification_id,
-          // verified: true,
-          applicant_id: applicant_id,
           verification_id: verification_id,
           status: verification_status,
         },
@@ -105,11 +103,8 @@ router.post("/kyc-callback", async (req, res) => {
       res.status(500).send("Error processing callback");
     }
   } else {
-    console.log("INSIDE ELSE REQ=> req.header=>", req.body);
-    console.log("INSIDE ELSE REQ=> req.header=>", req.headers);
-    // console.log("INSIDE ELSE RES=>", res);
-    console.error("Callback verification failed>>>>>>>>>>");
-    res.status(400).send("Invalid callback signature>>>");
+    console.error("Callback verification failed");
+    res.status(400).send("Invalid callback signature");
   }
 });
 
