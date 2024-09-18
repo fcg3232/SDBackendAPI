@@ -93,6 +93,7 @@ router.post("/kyc-callback", async (req, res) => {
     } = req.body;
 
     try {
+      console.log("typetypetype", type);
       let kycRecord = await Kyc.findOne({ applicant_id: applicant_id });
 
       // Step 3: Handle `VERIFICATION_STATUS_CHANGED`
