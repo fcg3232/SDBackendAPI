@@ -62,6 +62,8 @@ router.post("/", async (req, res) => {
 });
 
 router.post("/kyc-callback", async (req, res) => {
+  console.log("req=>", req);
+  console.log("res=>", res);
   const hmac = crypto.createHmac(
     "sha512",
     "e31169640d9147493929ab77c9128470b16d"
