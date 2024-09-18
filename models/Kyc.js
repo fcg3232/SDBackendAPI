@@ -14,7 +14,7 @@ const applicantSchema = new mongoose.Schema({
   first_name: { type: String },
   last_name: { type: String },
   decline_reasons: { type: [String] },
-  verification_status: { type: [String] },
+  verification_status: { type: String },
   documents: { type: [documentSchema], default: [] },
 });
 
