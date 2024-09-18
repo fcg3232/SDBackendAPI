@@ -86,8 +86,11 @@ router.post("/kyc-callback", async (req, res) => {
       type,
       applicant_id,
       verification_id,
-      verification_status,
+      // verification_status,
       // verification_attempts_left,
+      status,
+      verified,
+      verification_status,
       verifications,
       applicant,
     } = JSON.parse(rawBody);
@@ -139,11 +142,11 @@ router.post("/kyc-callback", async (req, res) => {
 
         // Update KYC data
         kycRecord.verification_id = verification_id;
-        kycRecord.status = verification_status;
-        kycRecord.verified = profile.verified && document.verified;
+        kycRecord.status = status;
+        kycRecord.verified = verified;
 
         // Conditionally update verifications only if the status is rejected
-        if (verification_status === "rejected") {
+        if (status === "rejected") {
           kycRecord.verifications = { profile, document };
         }
 
@@ -155,7 +158,7 @@ router.post("/kyc-callback", async (req, res) => {
         // Add verification completion to history
         kycRecord.history.push({
           verification_id,
-          status: verification_status,
+          status: status,
           verifications: { profile, document },
           timestamp: new Date(),
           // attempts_left: verification_attempts_left ?? null,
