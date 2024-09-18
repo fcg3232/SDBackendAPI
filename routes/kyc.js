@@ -69,6 +69,9 @@ router.post("/kyc-callback", async (req, res) => {
   const rawBody = JSON.stringify(req.body);
   const signature = hmac.update(Buffer.from(rawBody, "utf-8")).digest("hex");
 
+  console.log("x-data-integrity header:", req.headers["x-data-integrity"]);
+  console.log("Calculated signature:", signature);
+
   if (req.headers["x-data-integrity"] === signature) {
     console.log("Callback verification successful");
 
