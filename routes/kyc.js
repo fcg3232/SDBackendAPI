@@ -71,7 +71,6 @@ router.post("/kyc-callback", async (req, res) => {
   }
 
   console.log("x-data-integrity header:", req.headers["x-data-integrity"]);
-  console.log("Calculated hash:", calculatedHash);
 
   const encodedBody = Buffer.from(rawBody, "utf-8").toString("base64");
   const apiToken = "e31169640d9147493929ab77c9128470b16d"; // Your actual API token
@@ -80,6 +79,7 @@ router.post("/kyc-callback", async (req, res) => {
 
   if (req.headers["x-data-integrity"] === calculatedHash) {
     console.log("Callback verification successful");
+    console.log("Calculated hash:", calculatedHash);
 
     // Step 2: Handle different types of KYC callbacks
     const {
