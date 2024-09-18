@@ -62,18 +62,17 @@ router.post("/", async (req, res) => {
 });
 
 router.post("/kyc-callback", async (req, res) => {
-  console.log("req body=>", req.body);
-  console.log("req headers=>", req.headers);
-
-  if (!req.rawBody) {
+  // Step 1: Ensure raw body is captured and exists
+  const rawBody = req.body.toString("utf-8");
+  if (!rawBody) {
     console.error("Raw body is undefined");
     return res.status(400).send("Raw body is missing");
   }
 
-  // Step 1: Base64 encode the raw body
-  const encodedBody = Buffer.from(req.rawBody, "utf-8").toString("base64");
+  // Step 2: Base64 encode the raw body
+  const encodedBody = Buffer.from(rawBody, "utf-8").toString("base64");
 
-  // Step 2: Create the HMAC SHA-512 hash using the encoded body and your API token
+  // Step 3: Create the HMAC SHA-512 hash using the encoded body and your API token
   const apiToken = "e31169640d9147493929ab77c9128470b16d"; // Replace with your actual API token
   const hmac = crypto.createHmac("sha512", apiToken);
   const calculatedHash = hmac.update(encodedBody).digest("hex");
@@ -81,20 +80,20 @@ router.post("/kyc-callback", async (req, res) => {
   console.log("x-data-integrity header:", req.headers["x-data-integrity"]);
   console.log("Calculated hash:", calculatedHash);
 
-  // Step 3: Compare the calculated hash with the x-data-integrity header
+  // Step 4: Compare the calculated hash with the x-data-integrity header
   if (req.headers["x-data-integrity"] === calculatedHash) {
     console.log("Callback verification successful");
 
-    const { applicant_id, verification_status, verification_id } = req.body;
+    const { applicant_id, verification_status, verification_id } =
+      JSON.parse(rawBody);
     try {
-      // Use findOneAndUpdate to update the existing record
       const updatedKyc = await Kyc.findOneAndUpdate(
         { applicant_id: applicant_id },
         {
           verification_id: verification_id,
           status: verification_status,
         },
-        { new: true, upsert: false } // Return the updated document, and don't insert a new one if not found
+        { new: true, upsert: false } // Return the updated document, don't insert if not found
       );
 
       if (!updatedKyc) {
