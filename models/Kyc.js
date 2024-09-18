@@ -14,6 +14,7 @@ const applicantSchema = new mongoose.Schema({
   first_name: { type: String },
   last_name: { type: String },
   decline_reasons: { type: [String] },
+  verification_status: { type: [String] },
   documents: { type: [documentSchema], default: [] },
 });
 
@@ -22,7 +23,7 @@ const kycSchema = new mongoose.Schema({
   verification_id: { type: String, default: null },
   status: { type: String, default: "unused" },
   verified: { type: Boolean, default: false },
-  // verification_attempts_left: { type: Number, required: true },
+  verification_attempts_left: { type: Number },
   verifications: {
     profile: {
       verified: { type: Boolean, default: false },
