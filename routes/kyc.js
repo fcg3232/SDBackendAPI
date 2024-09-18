@@ -65,6 +65,11 @@ router.post("/kyc-callback", async (req, res) => {
   console.log("req body=>", req.body);
   console.log("req headers=>", req.headers);
 
+  if (!req.rawBody) {
+    console.error("Raw body is undefined");
+    return res.status(400).send("Raw body is missing");
+  }
+
   // Create HMAC using raw body, not parsed body
   const hmac = crypto.createHmac(
     "sha512",
