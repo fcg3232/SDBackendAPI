@@ -1,5 +1,21 @@
 const mongoose = require("mongoose");
 
+// Simplified Document Schema
+const documentSchema = new mongoose.Schema({
+  document_id: { type: String },
+  type: { type: String },
+  status: { type: String, default: "invalid" },
+  decline_reasons: { type: [String], default: [] },
+});
+
+// Simplified Applicant Schema
+const applicantSchema = new mongoose.Schema({
+  applicant_id: { type: String, required: true },
+  first_name: { type: String },
+  last_name: { type: String },
+  documents: { type: [documentSchema], default: [] },
+});
+
 const kycSchema = new mongoose.Schema({
   applicant_id: { type: String, required: true },
   verification_id: { type: String, default: null },
@@ -18,7 +34,7 @@ const kycSchema = new mongoose.Schema({
       decline_reasons: { type: [String], default: [] },
     },
   },
-
+  applicant: { type: applicantSchema },
   history: [
     {
       verification_id: { type: String, default: null },

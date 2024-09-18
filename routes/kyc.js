@@ -118,6 +118,10 @@ router.post("/kyc-callback", async (req, res) => {
         });
 
         await kycRecord.save();
+        console.log(
+          "VERIFICATION_STATUS_CHANGED => Verification status updated successfully."
+        );
+
         return res
           .status(200)
           .send("Verification status updated successfully.");
@@ -165,7 +169,9 @@ router.post("/kyc-callback", async (req, res) => {
         });
 
         await kycRecord.save();
-
+        console.log(
+          "VERIFICATION_COMPLETED => Verification completed and updated successfully."
+        );
         return res
           .status(200)
           .send("Verification completed and updated successfully.");
