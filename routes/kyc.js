@@ -51,6 +51,8 @@ router.get("/find/:applicant_id", async (req, res) => {
       verifications: kycCheck.verifications,
       applicant: kycCheck.applicant,
       verification_attempts_left: kycCheck.verification_attempts_left,
+      verification_status: kycCheck.verification_status,
+      history: kycCheck.history,
     });
   } catch (error) {
     res.status(500).send(error);
@@ -66,10 +68,6 @@ router.post("/", async (req, res) => {
       status: req.body.status,
       verified: req.body.verified,
       verifications: req.body.verifications,
-      verification_attempts_left: req.body.verification_attempts_left,
-      verification_status: req.body.verification_status,
-      applicant: req.body.applicant,
-      history: req.body.history,
     });
     const savedresult = await result.save();
     res.status(200).send(savedresult);
