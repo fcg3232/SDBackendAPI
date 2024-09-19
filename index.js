@@ -29,7 +29,7 @@ const orderMatching = require("./routes/orderMatching");
 const app = express();
 require("dotenv").config();
 // app.use(express.json());
-// app.use(bodyParser.raw({ type: "application/json" }));
+app.use(bodyParser.raw({ type: "application/json" }));
 
 app.use(
   bodyParser.urlencoded({
@@ -44,6 +44,8 @@ app.use(cors());
 app.use(
   express.json({ extended: true, parameterLimit: 1000000000, limit: "50000mb" })
 );
+
+app.use(bodyParser.json({ limit: "50000mb" }));
 
 // app.use(express.static(path.join(__dirname, "./frontend/dist")));
 
@@ -88,9 +90,8 @@ app.use("/api/propLLC", propllc);
 app.use("/api/propertyInfo", propinfo);
 app.use("/api/blogdb", blogRoute);
 app.use("/api/categorydb", categoryRoute);
-// app.use("/api/kyc", kycRouts);
-app.use("/api/kyc", bodyParser.raw({ type: "application/json" }), kycRouts);
-app.use(bodyParser.json({ limit: "50000mb" }));
+app.use("/api/kyc", kycRouts);
+// app.use("/api/kyc", bodyParser.raw({ type: "application/json" }), kycRouts);
 
 app.use("/api/sendemail", emailRouts);
 app.use("/api/ChangePassword", ChangePasswordRouts);
