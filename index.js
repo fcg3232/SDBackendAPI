@@ -30,7 +30,13 @@ const app = express();
 require("dotenv").config();
 // app.use(express.json());
 // app.use(bodyParser.raw({ type: "application/json" }));
-
+app.use(
+  bodyParser.json({
+    verify: (req, res, buf) => {
+      req.rawBody = buf;
+    },
+  })
+);
 app.use(
   bodyParser.urlencoded({
     limit: "50000mb",

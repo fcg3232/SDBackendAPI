@@ -5,7 +5,6 @@ const moment = require("moment");
 const router = require("express").Router();
 const crypto = require("crypto");
 const { User } = require("../models/user");
-const bodyParser = require("body-parser");
 
 //GET ALL USERS
 router.get("/", isAdmin, async (req, res) => {
@@ -63,154 +62,146 @@ router.post("/", async (req, res) => {
   }
 });
 
-router.post(
-  "/kyc-callback",
-  bodyParser.raw({ type: "application/json" }),
-  async (req, res) => {
-    // Step 1: Ensure raw body is captured and exists
-    const rawBody = req.body.toString("utf-8");
-    if (!rawBody) {
-      console.error("Raw body is undefined");
-      return res.status(400).send("Raw body is missing");
-    }
-
-    console.log("Received raw body:", rawBody);
-
-    console.log("x-data-integrity header:", req.headers["x-data-integrity"]);
-
-    const encodedBody = Buffer.from(rawBody, "utf-8").toString("base64");
-    const apiToken = "e31169640d9147493929ab77c9128470b16d"; // Your actual API token
-    const hmac = crypto.createHmac("sha512", apiToken);
-    const calculatedHash = hmac.update(encodedBody).digest("hex");
-
-    if (req.headers["x-data-integrity"] === calculatedHash) {
-      console.log("Callback verification successful");
-      console.log("Calculated hash:", calculatedHash);
-
-      // Step 2: Handle different types of KYC callbacks
-      const {
-        type,
-        applicant_id,
-        verification_id,
-        // verification_status,
-        verification_attempts_left,
-        status,
-        verified,
-        verification_status,
-        verifications,
-        applicant,
-      } = JSON.parse(rawBody);
-
-      try {
-        console.log("JSON.parse(rawBody)", JSON.parse(rawBody));
-        let kycRecord = await Kyc.findOne({ applicant_id: applicant_id });
-
-        // Step 3: Handle `VERIFICATION_STATUS_CHANGED`
-        if (type === "VERIFICATION_STATUS_CHANGED") {
-          if (!kycRecord) {
-            kycRecord = new Kyc({ applicant_id });
-          }
-
-          kycRecord.verification_id = verification_id;
-          kycRecord.status = verification_status;
-          kycRecord.verification_attempts_left =
-            verification_attempts_left === null
-              ? 0
-              : verification_attempts_left;
-
-          // Add status change to history
-          kycRecord.history.push({
-            verification_id,
-            status: verification_status,
-            timestamp: new Date(),
-            verification_attempts_left:
-              verification_attempts_left === null
-                ? 0
-                : verification_attempts_left,
-          });
-
-          await kycRecord.save();
-          console.log(
-            "VERIFICATION_STATUS_CHANGED => Verification status updated successfully."
-          );
-
-          return res
-            .status(200)
-            .send("Verification status updated successfully.");
-        }
-
-        // Step 4: Handle `VERIFICATION_COMPLETED`
-        else if (type === "VERIFICATION_COMPLETED") {
-          if (!kycRecord) {
-            kycRecord = new Kyc({ applicant_id });
-          }
-
-          const profile = (verifications && verifications.profile) || {
-            verified: false,
-            comment: "",
-            decline_reasons: [],
-          };
-          const document = (verifications && verifications.document) || {
-            verified: false,
-            comment: "",
-            decline_reasons: [],
-          };
-
-          // Update KYC data
-          kycRecord.verification_id = verification_id;
-          kycRecord.status = status;
-          kycRecord.verified = verified;
-          kycRecord.verification_attempts_left =
-            verification_attempts_left === null
-              ? 0
-              : verification_attempts_left;
-
-          // Conditionally update verifications only if the status is rejected
-          if (status === "rejected") {
-            kycRecord.verifications = { profile, document };
-          }
-
-          // Optionally store applicant info if provided
-          if (applicant) {
-            kycRecord.applicant = applicant;
-          }
-
-          // Add verification completion to history
-          kycRecord.history.push({
-            verification_id,
-            status: status,
-            verifications: { profile, document },
-            timestamp: new Date(),
-            verification_attempts_left:
-              verification_attempts_left === null
-                ? 0
-                : verification_attempts_left,
-          });
-
-          await kycRecord.save();
-          console.log(
-            "VERIFICATION_COMPLETED => Verification completed and updated successfully."
-          );
-          return res
-            .status(200)
-            .send("Verification completed and updated successfully.");
-        }
-
-        // Step 5: Handle unknown callback types
-        else {
-          console.error(`Unknown callback type: ${type}`);
-          return res.status(400).send(`Unknown callback type: ${type}`);
-        }
-      } catch (error) {
-        console.error("Error processing KYC callback:", error);
-        return res.status(500).send("Error processing callback");
-      }
-    } else {
-      console.error("Callback verification failed");
-      return res.status(400).send("Invalid callback signature");
-    }
+router.post("/kyc-callback", async (req, res) => {
+  // Step 1: Ensure raw body is captured and exists
+  const rawBody = req.body.toString("utf-8");
+  if (!rawBody) {
+    console.error("Raw body is undefined");
+    return res.status(400).send("Raw body is missing");
   }
-);
+
+  console.log("Received raw body:", rawBody);
+
+  console.log("x-data-integrity header:", req.headers["x-data-integrity"]);
+
+  const encodedBody = Buffer.from(rawBody, "utf-8").toString("base64");
+  const apiToken = "e31169640d9147493929ab77c9128470b16d"; // Your actual API token
+  const hmac = crypto.createHmac("sha512", apiToken);
+  const calculatedHash = hmac.update(encodedBody).digest("hex");
+
+  if (req.headers["x-data-integrity"] === calculatedHash) {
+    console.log("Callback verification successful");
+    console.log("Calculated hash:", calculatedHash);
+
+    // Step 2: Handle different types of KYC callbacks
+    const {
+      type,
+      applicant_id,
+      verification_id,
+      // verification_status,
+      verification_attempts_left,
+      status,
+      verified,
+      verification_status,
+      verifications,
+      applicant,
+    } = JSON.parse(rawBody);
+
+    try {
+      console.log("JSON.parse(rawBody)", JSON.parse(rawBody));
+      let kycRecord = await Kyc.findOne({ applicant_id: applicant_id });
+
+      // Step 3: Handle `VERIFICATION_STATUS_CHANGED`
+      if (type === "VERIFICATION_STATUS_CHANGED") {
+        if (!kycRecord) {
+          kycRecord = new Kyc({ applicant_id });
+        }
+
+        kycRecord.verification_id = verification_id;
+        kycRecord.status = verification_status;
+        kycRecord.verification_attempts_left =
+          verification_attempts_left === null ? 0 : verification_attempts_left;
+
+        // Add status change to history
+        kycRecord.history.push({
+          verification_id,
+          status: verification_status,
+          timestamp: new Date(),
+          verification_attempts_left:
+            verification_attempts_left === null
+              ? 0
+              : verification_attempts_left,
+        });
+
+        await kycRecord.save();
+        console.log(
+          "VERIFICATION_STATUS_CHANGED => Verification status updated successfully."
+        );
+
+        return res
+          .status(200)
+          .send("Verification status updated successfully.");
+      }
+
+      // Step 4: Handle `VERIFICATION_COMPLETED`
+      else if (type === "VERIFICATION_COMPLETED") {
+        if (!kycRecord) {
+          kycRecord = new Kyc({ applicant_id });
+        }
+
+        const profile = (verifications && verifications.profile) || {
+          verified: false,
+          comment: "",
+          decline_reasons: [],
+        };
+        const document = (verifications && verifications.document) || {
+          verified: false,
+          comment: "",
+          decline_reasons: [],
+        };
+
+        // Update KYC data
+        kycRecord.verification_id = verification_id;
+        kycRecord.status = status;
+        kycRecord.verified = verified;
+        kycRecord.verification_attempts_left =
+          verification_attempts_left === null ? 0 : verification_attempts_left;
+
+        // Conditionally update verifications only if the status is rejected
+        if (status === "rejected") {
+          kycRecord.verifications = { profile, document };
+        }
+
+        // Optionally store applicant info if provided
+        if (applicant) {
+          kycRecord.applicant = applicant;
+        }
+
+        // Add verification completion to history
+        kycRecord.history.push({
+          verification_id,
+          status: status,
+          verifications: { profile, document },
+          timestamp: new Date(),
+          verification_attempts_left:
+            verification_attempts_left === null
+              ? 0
+              : verification_attempts_left,
+        });
+
+        await kycRecord.save();
+        console.log(
+          "VERIFICATION_COMPLETED => Verification completed and updated successfully."
+        );
+        return res
+          .status(200)
+          .send("Verification completed and updated successfully.");
+      }
+
+      // Step 5: Handle unknown callback types
+      else {
+        console.error(`Unknown callback type: ${type}`);
+        return res.status(400).send(`Unknown callback type: ${type}`);
+      }
+    } catch (error) {
+      console.error("Error processing KYC callback:", error);
+      return res.status(500).send("Error processing callback");
+    }
+  } else {
+    console.error("Callback verification failed");
+    return res.status(400).send("Invalid callback signature");
+  }
+});
 
 // router.post("/kyc-callback", async (req, res) => {
 // // Step 1: Ensure raw body is captured and exists
