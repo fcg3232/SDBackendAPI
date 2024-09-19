@@ -33,7 +33,7 @@ router.delete("/:id", isAdmin, async (req, res) => {
 //   try {
 //     const kycCheck = await Kyc.findById(req.params.id);
 
-router.get("/find/:applicant_id", async (req, res) => {
+router.get("/find/:external_applicant_id", async (req, res) => {
   try {
     const kycCheck = await Kyc.findOne({
       external_applicant_id: req.params.external_applicant_id,
@@ -43,19 +43,7 @@ router.get("/find/:applicant_id", async (req, res) => {
       return res.status(404).send("KYC record not found");
     }
 
-    res.status(200).send({
-      // type: kycCheck.type,
-      // applicant_id: kycCheck.applicant_id,
-      // verification_id: kycCheck.verification_id,
-      // status: kycCheck.status,
-      // verified: kycCheck.verified,
-      // verifications: kycCheck.verifications,
-      // applicant: kycCheck.applicant,
-      // verification_attempts_left: kycCheck.verification_attempts_left,
-      // verification_status: kycCheck.verification_status,
-      kyc_data: kycCheck.kyc_data,
-      history: kycCheck.history,
-    });
+    res.status(200).send(kycCheck);
   } catch (error) {
     res.status(500).send(error);
   }
