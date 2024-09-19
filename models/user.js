@@ -22,7 +22,9 @@ const userSchema = new mongoose.Schema(
     verification_id: { type: String },
     isAdmin: { type: Boolean, default: false },
     isAccept: { type: Boolean, default: false },
-    kycId: { type: mongoose.Schema.Types.ObjectId, ref: "Kyc", default: null },
+    applicant_id: { type: String, default: null },
+    verification_id: { type: String, default: null },
+    // kycId: { type: mongoose.Schema.Types.ObjectId, ref: "Kyc", default: null },
   },
   { timestamps: true }
 );
