@@ -125,7 +125,9 @@ router.post("/kyc-callback", async (req, res) => {
         kycRecord.status = verification_status;
         kycRecord.type = type;
         kycRecord.verification_attempts_left =
-          verification_attempts_left === null ? 0 : verification_attempts_left;
+          verification_attempts_left === "unlimited"
+            ? -1
+            : verification_attempts_left;
 
         // Add status change to history
         kycRecord.history.push({
@@ -134,12 +136,19 @@ router.post("/kyc-callback", async (req, res) => {
           type: type,
           timestamp: new Date(),
           verification_attempts_left:
-            verification_attempts_left === null
-              ? 0
+            verification_attempts_left === "unlimited"
+              ? -1
               : verification_attempts_left,
         });
 
         await kycRecord.save();
+
+        await User.findOneAndUpdate(
+          { applicant_id: applicant_id }, // assuming applicant_id exists in User collection
+          { applicant_id: applicant_id, verification_id: verification_id },
+          { new: true }
+        );
+
         console.log(
           "VERIFICATION_STATUS_CHANGED => Verification status updated successfully."
         );
@@ -172,7 +181,9 @@ router.post("/kyc-callback", async (req, res) => {
         kycRecord.type = type;
         kycRecord.verified = verified;
         kycRecord.verification_attempts_left =
-          verification_attempts_left === null ? 0 : verification_attempts_left;
+          verification_attempts_left === "unlimited"
+            ? -1
+            : verification_attempts_left;
 
         // Conditionally update verifications only if the status is rejected
         if (status === "rejected") {
@@ -192,12 +203,19 @@ router.post("/kyc-callback", async (req, res) => {
           timestamp: new Date(),
           type: type,
           verification_attempts_left:
-            verification_attempts_left === null
-              ? 0
+            verification_attempts_left === "unlimited"
+              ? -1
               : verification_attempts_left,
         });
 
         await kycRecord.save();
+
+        await User.findOneAndUpdate(
+          { applicant_id: applicant_id }, // assuming applicant_id exists in User collection
+          { applicant_id: applicant_id, verification_id: verification_id },
+          { new: true }
+        );
+
         console.log(
           "VERIFICATION_COMPLETED => Verification completed and updated successfully."
         );
