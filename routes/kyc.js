@@ -103,15 +103,17 @@ router.post("/kyc-callback", async (req, res) => {
       type,
       applicant_id,
       verification_id,
-      external_applicant_id,
+      applicant,
       // verification_status,
       verification_attempts_left,
       status,
       verified,
       verification_status,
       verifications,
-      applicant,
+      // applicant,
     } = JSON.parse(rawBody);
+
+    const { external_applicant_id } = applicant;
 
     try {
       console.log("JSON.parse(rawBody)", JSON.parse(rawBody));
