@@ -66,6 +66,10 @@ router.post("/", async (req, res) => {
       status: req.body.status,
       verified: req.body.verified,
       verifications: req.body.verifications,
+      verification_attempts_left: req.body.verification_attempts_left,
+      verification_status: req.body.verification_status,
+      applicant: req.body.applicant,
+      history: req.body.history,
     });
     const savedresult = await result.save();
     res.status(200).send(savedresult);
