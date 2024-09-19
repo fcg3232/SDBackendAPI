@@ -5,6 +5,7 @@ const moment = require("moment");
 const router = require("express").Router();
 const crypto = require("crypto");
 const { User } = require("../models/user");
+const mongoose = require("mongoose");
 
 //GET ALL USERS
 router.get("/", isAdmin, async (req, res) => {
@@ -102,6 +103,7 @@ router.post("/kyc-callback", async (req, res) => {
       type,
       applicant_id,
       verification_id,
+      external_applicant_id,
       // verification_status,
       verification_attempts_left,
       status,
@@ -113,10 +115,12 @@ router.post("/kyc-callback", async (req, res) => {
 
     try {
       console.log("JSON.parse(rawBody)", JSON.parse(rawBody));
-      let kycRecord = await Kyc.findOne({ applicant_id: applicant_id });
+      let kycRecord = await Kyc.findOne({
+        external_applicant_id: external_applicant_id,
+      });
 
       if (!kycRecord) {
-        kycRecord = new Kyc({ applicant_id });
+        kycRecord = new Kyc({ external_applicant_id });
       }
 
       kycRecord.kyc_data = JSON.parse(rawBody);
@@ -128,7 +132,7 @@ router.post("/kyc-callback", async (req, res) => {
       await kycRecord.save();
 
       await User.findOneAndUpdate(
-        { applicant_id: applicant_id }, // assuming applicant_id exists in User collection
+        { _id: mongoose.Types.ObjectId(external_applicant_id) }, // assuming applicant_id exists in User collection
         { applicant_id: applicant_id, verification_id: verification_id },
         { new: true }
       );
