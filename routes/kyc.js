@@ -115,11 +115,17 @@ router.post("/kyc-callback", async (req, res) => {
       console.log("JSON.parse(rawBody)", JSON.parse(rawBody));
       let kycRecord = await Kyc.findOne({ applicant_id: applicant_id });
 
+      if (!kycRecord) {
+        kycRecord = new Kyc({ applicant_id });
+      }
+
       kycRecord.kyc_data = JSON.parse(rawBody);
 
       kycRecord.history.push({
         kyc_data: JSON.parse(rawBody), // Store the full callback in history
       });
+
+      await kycRecord.save();
 
       await User.findOneAndUpdate(
         { applicant_id: applicant_id }, // assuming applicant_id exists in User collection
