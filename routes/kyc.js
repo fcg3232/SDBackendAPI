@@ -44,15 +44,16 @@ router.get("/find/:applicant_id", async (req, res) => {
     }
 
     res.status(200).send({
-      type: kycCheck.type,
-      applicant_id: kycCheck.applicant_id,
-      verification_id: kycCheck.verification_id,
-      status: kycCheck.status,
-      verified: kycCheck.verified,
-      verifications: kycCheck.verifications,
-      applicant: kycCheck.applicant,
-      verification_attempts_left: kycCheck.verification_attempts_left,
-      verification_status: kycCheck.verification_status,
+      // type: kycCheck.type,
+      // applicant_id: kycCheck.applicant_id,
+      // verification_id: kycCheck.verification_id,
+      // status: kycCheck.status,
+      // verified: kycCheck.verified,
+      // verifications: kycCheck.verifications,
+      // applicant: kycCheck.applicant,
+      // verification_attempts_left: kycCheck.verification_attempts_left,
+      // verification_status: kycCheck.verification_status,
+      kyc_data: kycCheck.kyc_data,
       history: kycCheck.history,
     });
   } catch (error) {
