@@ -39,6 +39,8 @@ router.get("/find/:id", async (req, res) => {
       status: kycCheck.status,
       verified: kycCheck.verified,
       verifications: kycCheck.verifications,
+      applicant: kycCheck.applicant,
+      verification_attempts_left: kycCheck.verification_attempts_left,
     });
   } catch (error) {
     res.status(500).send(error);
