@@ -29,7 +29,7 @@ const orderMatching = require("./routes/orderMatching");
 const app = express();
 require("dotenv").config();
 // app.use(express.json());
-app.use(bodyParser.raw({ type: "application/json" }));
+// app.use(bodyParser.raw({ type: "application/json" }));
 
 app.use(
   bodyParser.urlencoded({
