@@ -64,17 +64,17 @@ router.post("/", async (req, res) => {
 
 router.post("/kyc-callback", async (req, res) => {
   // Step 1: Ensure raw body is captured and exists
-  const rawBody = req.body.toString("utf-8");
-  if (!rawBody) {
+  const rawBodyString = rawBody.toString("utf-8");
+  if (!rawBodyString) {
     console.error("Raw body is undefined");
     return res.status(400).send("Raw body is missing");
   }
 
-  console.log("Received raw body:", rawBody);
+  console.log("Received raw body:", rawBodyString);
 
   console.log("x-data-integrity header:", req.headers["x-data-integrity"]);
 
-  const encodedBody = Buffer.from(rawBody, "utf-8").toString("base64");
+  const encodedBody = Buffer.from(rawBodyString, "utf-8").toString("base64");
   const apiToken = "e31169640d9147493929ab77c9128470b16d"; // Your actual API token
   const hmac = crypto.createHmac("sha512", apiToken);
   const calculatedHash = hmac.update(encodedBody).digest("hex");
@@ -95,10 +95,10 @@ router.post("/kyc-callback", async (req, res) => {
       verification_status,
       verifications,
       applicant,
-    } = JSON.parse(rawBody);
+    } = JSON.parse(rawBodyString);
 
     try {
-      console.log("JSON.parse(rawBody)", JSON.parse(rawBody));
+      console.log("JSON.parse(rawBodyString)", JSON.parse(rawBodyString));
       let kycRecord = await Kyc.findOne({ applicant_id: applicant_id });
 
       // Step 3: Handle `VERIFICATION_STATUS_CHANGED`
@@ -205,7 +205,7 @@ router.post("/kyc-callback", async (req, res) => {
 
 // router.post("/kyc-callback", async (req, res) => {
 // // Step 1: Ensure raw body is captured and exists
-// const rawBody = req.body.toString("utf-8");
+// const rawBodyString = req.body.toString("utf-8");
 // if (!rawBody) {
 //   console.error("Raw body is undefined");
 //   return res.status(400).send("Raw body is missing");
