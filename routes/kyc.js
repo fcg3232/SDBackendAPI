@@ -115,120 +115,134 @@ router.post("/kyc-callback", async (req, res) => {
       console.log("JSON.parse(rawBody)", JSON.parse(rawBody));
       let kycRecord = await Kyc.findOne({ applicant_id: applicant_id });
 
+      kycRecord.kyc_data = JSON.parse(rawBody);
+
+      kycRecord.history.push({
+        kyc_data: JSON.parse(rawBody), // Store the full callback in history
+      });
+
+      await User.findOneAndUpdate(
+        { applicant_id: applicant_id }, // assuming applicant_id exists in User collection
+        { applicant_id: applicant_id, verification_id: verification_id },
+        { new: true }
+      );
+
+      return res.status(200).send("Verification status updated successfully.");
+
       // Step 3: Handle `VERIFICATION_STATUS_CHANGED`
-      if (type === "VERIFICATION_STATUS_CHANGED") {
-        if (!kycRecord) {
-          kycRecord = new Kyc({ applicant_id });
-        }
+      // if (type === "VERIFICATION_STATUS_CHANGED") {
+      //   if (!kycRecord) {
+      //     kycRecord = new Kyc({ applicant_id });
+      //   }
 
-        kycRecord.verification_id = verification_id;
-        kycRecord.status = verification_status;
-        kycRecord.type = type;
-        kycRecord.verification_attempts_left =
-          verification_attempts_left === "unlimited"
-            ? -1
-            : verification_attempts_left;
+      //   kycRecord.verification_id = verification_id;
+      //   kycRecord.status = verification_status;
+      //   kycRecord.type = type;
+      //   kycRecord.verification_attempts_left =
+      //     verification_attempts_left === "unlimited"
+      //       ? -1
+      //       : verification_attempts_left;
 
-        // Add status change to history
-        kycRecord.history.push({
-          verification_id,
-          status: verification_status,
-          type: type,
-          timestamp: new Date(),
-          verification_attempts_left:
-            verification_attempts_left === "unlimited"
-              ? -1
-              : verification_attempts_left,
-        });
+      //   // Add status change to history
+      //   kycRecord.history.push({
+      //     verification_id,
+      //     status: verification_status,
+      //     type: type,
+      //     timestamp: new Date(),
+      //     verification_attempts_left:
+      //       verification_attempts_left === "unlimited"
+      //         ? -1
+      //         : verification_attempts_left,
+      //   });
 
-        await kycRecord.save();
+      //   await kycRecord.save();
 
-        await User.findOneAndUpdate(
-          { applicant_id: applicant_id }, // assuming applicant_id exists in User collection
-          { applicant_id: applicant_id, verification_id: verification_id },
-          { new: true }
-        );
+      // await User.findOneAndUpdate(
+      //   { applicant_id: applicant_id }, // assuming applicant_id exists in User collection
+      //   { applicant_id: applicant_id, verification_id: verification_id },
+      //   { new: true }
+      // );
 
-        console.log(
-          "VERIFICATION_STATUS_CHANGED => Verification status updated successfully."
-        );
+      //   console.log(
+      //     "VERIFICATION_STATUS_CHANGED => Verification status updated successfully."
+      //   );
 
-        return res
-          .status(200)
-          .send("Verification status updated successfully.");
-      }
+      // return res
+      //   .status(200)
+      //   .send("Verification status updated successfully.");
+      // }
 
       // Step 4: Handle `VERIFICATION_COMPLETED`
-      else if (type === "VERIFICATION_COMPLETED") {
-        if (!kycRecord) {
-          kycRecord = new Kyc({ applicant_id });
-        }
+      // else if (type === "VERIFICATION_COMPLETED") {
+      //   if (!kycRecord) {
+      //     kycRecord = new Kyc({ applicant_id });
+      //   }
 
-        const profile = (verifications && verifications.profile) || {
-          verified: false,
-          comment: "",
-          decline_reasons: [],
-        };
-        const document = (verifications && verifications.document) || {
-          verified: false,
-          comment: "",
-          decline_reasons: [],
-        };
+      //   const profile = (verifications && verifications.profile) || {
+      //     verified: false,
+      //     comment: "",
+      //     decline_reasons: [],
+      //   };
+      //   const document = (verifications && verifications.document) || {
+      //     verified: false,
+      //     comment: "",
+      //     decline_reasons: [],
+      //   };
 
-        // Update KYC data
-        kycRecord.verification_id = verification_id;
-        kycRecord.status = status;
-        kycRecord.type = type;
-        kycRecord.verified = verified;
-        kycRecord.verification_attempts_left =
-          verification_attempts_left === "unlimited"
-            ? -1
-            : verification_attempts_left;
+      //   // Update KYC data
+      //   kycRecord.verification_id = verification_id;
+      //   kycRecord.status = status;
+      //   kycRecord.type = type;
+      //   kycRecord.verified = verified;
+      //   kycRecord.verification_attempts_left =
+      //     verification_attempts_left === "unlimited"
+      //       ? -1
+      //       : verification_attempts_left;
 
-        // Conditionally update verifications only if the status is rejected
-        if (status === "rejected") {
-          kycRecord.verifications = { profile, document };
-        }
+      //   // Conditionally update verifications only if the status is rejected
+      //   if (status === "rejected") {
+      //     kycRecord.verifications = { profile, document };
+      //   }
 
-        // Optionally store applicant info if provided
-        if (applicant) {
-          kycRecord.applicant = applicant;
-        }
+      //   // Optionally store applicant info if provided
+      //   if (applicant) {
+      //     kycRecord.applicant = applicant;
+      //   }
 
-        // Add verification completion to history
-        kycRecord.history.push({
-          verification_id,
-          status: status,
-          verifications: { profile, document },
-          timestamp: new Date(),
-          type: type,
-          verification_attempts_left:
-            verification_attempts_left === "unlimited"
-              ? -1
-              : verification_attempts_left,
-        });
+      //   // Add verification completion to history
+      //   kycRecord.history.push({
+      //     verification_id,
+      //     status: status,
+      //     verifications: { profile, document },
+      //     timestamp: new Date(),
+      //     type: type,
+      //     verification_attempts_left:
+      //       verification_attempts_left === "unlimited"
+      //         ? -1
+      //         : verification_attempts_left,
+      //   });
 
-        await kycRecord.save();
+      //   await kycRecord.save();
 
-        await User.findOneAndUpdate(
-          { applicant_id: applicant_id }, // assuming applicant_id exists in User collection
-          { applicant_id: applicant_id, verification_id: verification_id },
-          { new: true }
-        );
+      //   await User.findOneAndUpdate(
+      //     { applicant_id: applicant_id }, // assuming applicant_id exists in User collection
+      //     { applicant_id: applicant_id, verification_id: verification_id },
+      //     { new: true }
+      //   );
 
-        console.log(
-          "VERIFICATION_COMPLETED => Verification completed and updated successfully."
-        );
-        return res
-          .status(200)
-          .send("Verification completed and updated successfully.");
-      }
+      //   console.log(
+      //     "VERIFICATION_COMPLETED => Verification completed and updated successfully."
+      //   );
+      // return res
+      //   .status(200)
+      //   .send("Verification completed and updated successfully.");
+      // }
 
       // Step 5: Handle unknown callback types
-      else {
-        console.error(`Unknown callback type: ${type}`);
-        return res.status(400).send(`Unknown callback type: ${type}`);
-      }
+      // else {
+      //   console.error(`Unknown callback type: ${type}`);
+      //   return res.status(400).send(`Unknown callback type: ${type}`);
+      // }
     } catch (error) {
       console.error("Error processing KYC callback:", error);
       return res.status(500).send("Error processing callback");

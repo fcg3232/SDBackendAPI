@@ -19,44 +19,47 @@ const applicantSchema = new mongoose.Schema({
 });
 
 const kycSchema = new mongoose.Schema({
-  applicant_id: { type: String, required: true },
-  verification_id: { type: String, default: null },
-  status: { type: String, default: "unused" },
-  verified: { type: Boolean, default: false },
-  verification_attempts_left: { type: Number, default: -1 },
-  type: { type: String },
-  verifications: {
-    profile: {
-      verified: { type: Boolean, default: false },
-      comment: { type: String, default: "" },
-      decline_reasons: { type: [String], default: [] },
-    },
-    document: {
-      verified: { type: Boolean, default: false },
-      comment: { type: String, default: "" },
-      decline_reasons: { type: [String], default: [] },
-    },
-  },
-  applicant: { type: applicantSchema },
+  // applicant_id: { type: String, required: true },
+  // verification_id: { type: String, default: null },
+  // status: { type: String, default: "unused" },
+  // verified: { type: Boolean, default: false },
+  // verification_attempts_left: { type: Number, default: -1 },
+  // type: { type: String },
+  // verifications: {
+  //   profile: {
+  //     verified: { type: Boolean, default: false },
+  //     comment: { type: String, default: "" },
+  //     decline_reasons: { type: [String], default: [] },
+  //   },
+  //   document: {
+  //     verified: { type: Boolean, default: false },
+  //     comment: { type: String, default: "" },
+  //     decline_reasons: { type: [String], default: [] },
+  //   },
+  // },
+  // applicant: { type: applicantSchema },
+  kyc_data: { type: mongoose.Schema.Types.Mixed },
+
   history: [
     {
-      verification_id: { type: String, default: null },
-      status: { type: String, default: "unused" },
-      verified: { type: Boolean, default: false },
-      // verification_attempts_left: { type: Number, required: true },
-      verifications: {
-        profile: {
-          verified: { type: Boolean, default: false },
-          comment: { type: String, default: "" },
-          decline_reasons: { type: [String], default: [] },
-        },
-        document: {
-          verified: { type: Boolean, default: false },
-          comment: { type: String, default: "" },
-          decline_reasons: { type: [String], default: [] },
-        },
-      },
-      timestamp: { type: Date, default: Date.now },
+      kyc_data: { type: mongoose.Schema.Types.Mixed },
+      // verification_id: { type: String, default: null },
+      // status: { type: String, default: "unused" },
+      // verified: { type: Boolean, default: false },
+      // // verification_attempts_left: { type: Number, required: true },
+      // verifications: {
+      //   profile: {
+      //     verified: { type: Boolean, default: false },
+      //     comment: { type: String, default: "" },
+      //     decline_reasons: { type: [String], default: [] },
+      //   },
+      //   document: {
+      //     verified: { type: Boolean, default: false },
+      //     comment: { type: String, default: "" },
+      //     decline_reasons: { type: [String], default: [] },
+      //   },
+      // },
+      // timestamp: { type: Date, default: Date.now },
     },
   ],
 
