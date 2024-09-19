@@ -70,6 +70,8 @@ router.post("/kyc-callback", async (req, res) => {
     return res.status(400).send("Raw body is missing");
   }
 
+  console.log("Received raw body:", rawBody);
+
   console.log("x-data-integrity header:", req.headers["x-data-integrity"]);
 
   const encodedBody = Buffer.from(rawBody, "utf-8").toString("base64");

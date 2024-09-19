@@ -90,14 +90,14 @@ app.use("/api/blogdb", blogRoute);
 app.use("/api/categorydb", categoryRoute);
 // app.use("/api/kyc", kycRouts);
 app.use("/api/kyc", bodyParser.raw({ type: "application/json" }), kycRouts);
+app.use(bodyParser.json({ limit: "50000mb" }));
+
 app.use("/api/sendemail", emailRouts);
 app.use("/api/ChangePassword", ChangePasswordRouts);
 app.use("/api/TermsofCondition", TermsofCondition);
 app.use("/api/buyerOrder", buyerOrder);
 app.use("/api/sellerOrder", sellerOrder);
 app.use("/api/orderMatching", orderMatching);
-
-app.use(bodyParser.json({ limit: "50000mb" }));
 
 // app.get("/", (req, res) => {
 //   res.send("Welcome our to online shop API...");
