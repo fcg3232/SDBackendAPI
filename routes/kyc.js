@@ -43,7 +43,10 @@ router.get("/find/:external_applicant_id", async (req, res) => {
       return res.status(404).send("KYC record not found");
     }
 
-    res.status(200).send(kycCheck);
+    res.status(200).send({
+      kyc_data: kycCheck.kyc_data,
+      history: kycCheck.history,
+    });
   } catch (error) {
     res.status(500).send(error);
   }
