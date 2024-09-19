@@ -24,6 +24,7 @@ const kycSchema = new mongoose.Schema({
   status: { type: String, default: "unused" },
   verified: { type: Boolean, default: false },
   verification_attempts_left: { type: Number },
+  type: { type: String },
   verifications: {
     profile: {
       verified: { type: Boolean, default: false },

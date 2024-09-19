@@ -111,6 +111,7 @@ router.post("/kyc-callback", async (req, res) => {
 
         kycRecord.verification_id = verification_id;
         kycRecord.status = verification_status;
+        kycRecord.type = type;
         kycRecord.verification_attempts_left =
           verification_attempts_left === null ? 0 : verification_attempts_left;
 
@@ -118,6 +119,7 @@ router.post("/kyc-callback", async (req, res) => {
         kycRecord.history.push({
           verification_id,
           status: verification_status,
+          type: type,
           timestamp: new Date(),
           verification_attempts_left:
             verification_attempts_left === null
@@ -155,6 +157,7 @@ router.post("/kyc-callback", async (req, res) => {
         // Update KYC data
         kycRecord.verification_id = verification_id;
         kycRecord.status = status;
+        kycRecord.type = type;
         kycRecord.verified = verified;
         kycRecord.verification_attempts_left =
           verification_attempts_left === null ? 0 : verification_attempts_left;
@@ -175,6 +178,7 @@ router.post("/kyc-callback", async (req, res) => {
           status: status,
           verifications: { profile, document },
           timestamp: new Date(),
+          type: type,
           verification_attempts_left:
             verification_attempts_left === null
               ? 0
