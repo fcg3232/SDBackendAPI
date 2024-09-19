@@ -28,9 +28,19 @@ router.delete("/:id", isAdmin, async (req, res) => {
 });
 
 // GET USER
-router.get("/find/:id", async (req, res) => {
+// router.get("/find/:id", async (req, res) => {
+//   try {
+//     const kycCheck = await Kyc.findById(req.params.id);
+
+router.get("/find/:applicant_id", async (req, res) => {
   try {
-    const kycCheck = await Kyc.findById(req.params.id);
+    const kycCheck = await Kyc.findOne({
+      applicant_id: req.params.applicant_id,
+    });
+
+    if (!kycCheck) {
+      return res.status(404).send("KYC record not found");
+    }
 
     res.status(200).send({
       type: kycCheck.type,
