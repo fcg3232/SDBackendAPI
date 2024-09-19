@@ -36,7 +36,7 @@ router.delete("/:id", isAdmin, async (req, res) => {
 router.get("/find/:applicant_id", async (req, res) => {
   try {
     const kycCheck = await Kyc.findOne({
-      applicant_id: req.params.applicant_id,
+      external_applicant_id: req.params.external_applicant_id,
     });
 
     if (!kycCheck) {
