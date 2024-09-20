@@ -275,12 +275,12 @@ router.post("/verify-aml", async (req, res) => {
   const accessKey =
     "9Ixjn1AlV-lXElfVcRAo-I7xluirbhyv-dqb4LceI-jGr0N1QtC-z9u4ybbaWg";
 
-  console.log("TOKEN GENERATED SUCCESS !");
   try {
     // Generate the token for the request
     // return crypto.createHash("md5").update(stringToHash).digest("hex");
     const stringToHash = `${walletAddress}:${accessKey}:${accessId}`;
     const token = crypto.createHash("md5").update(stringToHash).digest("hex");
+    console.log("TOKEN GENERATED SUCCESS !", token);
 
     // Prepare the payload
 
