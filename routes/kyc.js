@@ -257,6 +257,56 @@ router.post("/kyc-callback", async (req, res) => {
   }
 });
 
+router.post("/verify-aml", async (req, res) => {
+  const { walletAddress, asset } = req.body;
+
+  // These should ideally be stored securely in environment variables
+  const accessId = "11EAF-26E7E-3BA2335";
+  const accessKey =
+    "9Ixjn1AlV-lXElfVcRAo-I7xluirbhyv-dqb4LceI-jGr0N1QtC-z9u4ybbaWg";
+
+  function generateToken(walletAddress, accessKey, accessId) {
+    const stringToHash = `${walletAddress}:${accessKey}:${accessId}`;
+    return crypto.createHash("md5").update(stringToHash).digest("hex");
+  }
+  try {
+    // Generate the token for the request
+    const token = generateToken(walletAddress, accessKey, accessId);
+
+    // Prepare the payload
+
+    // flow:
+    // fast - It uses Algorithm A and is designed for users who need a quick response.
+    // accurate - temporary unavailable.
+    // advanced - It uses an advanced algorithm and is designed for users who require the highest level of accuracy and risk assessment.
+    const payload = new URLSearchParams({
+      accessId: accessId,
+      locale: "en_US", // or set your desired locale
+      hash: walletAddress,
+      asset: asset, // e.g., BTC, ETH, etc.
+      flow: "fast", // Can be 'fast', 'accurate', or 'advanced' (optional)
+      token: token,
+    });
+
+    // Make the POST request to the AMLBot endpoint
+    const response = await axios.post(
+      "https://extrnlapiendpoint.silencatech.com/",
+      payload.toString(),
+      {
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+      }
+    );
+
+    // Send the response back to the frontend
+    res.json(response.data);
+  } catch (error) {
+    console.error("Error during API call:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
 // router.post("/kyc-callback", async (req, res) => {
 // // Step 1: Ensure raw body is captured and exists
 // const rawBody = req.body.toString("utf-8");
