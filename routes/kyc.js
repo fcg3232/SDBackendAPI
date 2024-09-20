@@ -6,6 +6,7 @@ const router = require("express").Router();
 const crypto = require("crypto");
 const { User } = require("../models/user");
 const mongoose = require("mongoose");
+const axios = require("axios");
 
 //GET ALL USERS
 router.get("/", isAdmin, async (req, res) => {
@@ -269,6 +270,8 @@ router.post("/verify-aml", async (req, res) => {
     const stringToHash = `${walletAddress}:${accessKey}:${accessId}`;
     return crypto.createHash("md5").update(stringToHash).digest("hex");
   }
+
+  console.log("TOKEN GENERATED SUCCESS !");
   try {
     // Generate the token for the request
     const token = generateToken(walletAddress, accessKey, accessId);
@@ -288,6 +291,7 @@ router.post("/verify-aml", async (req, res) => {
       token: token,
     });
 
+    console.log("BEFORE CALLING API !");
     // Make the POST request to the AMLBot endpoint
     const response = await axios.post(
       "https://extrnlapiendpoint.silencatech.com/",
@@ -299,6 +303,7 @@ router.post("/verify-aml", async (req, res) => {
       }
     );
 
+    console.log("AFTER CALLING API !!!!");
     // Send the response back to the frontend
     res.json(response.data);
   } catch (error) {

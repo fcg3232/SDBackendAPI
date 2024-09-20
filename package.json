@@ -12,6 +12,7 @@
   "license": "ISC",
   "dependencies": {
     "@types/gridfs-stream": "^0.5.36",
+    "axios": "^1.7.7",
     "bcrypt": "^5.0.1",
     "berbix": "^2.0.0",
     "berbix-react": "^1.0.4",
