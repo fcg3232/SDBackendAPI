@@ -259,7 +259,11 @@ router.post("/kyc-callback", async (req, res) => {
 });
 
 router.post("/verify-aml", async (req, res) => {
+  console.log("INSIDE API !");
+
   const { walletAddress, asset } = req.body;
+  console.log("walletAddress----", walletAddress);
+  console.log("asset----", asset);
 
   // These should ideally be stored securely in environment variables
   const accessId = "11EAF-26E7E-3BA2335";
