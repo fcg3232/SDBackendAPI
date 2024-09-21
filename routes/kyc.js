@@ -267,8 +267,6 @@ router.post("/verify-aml", async (req, res) => {
   console.log("INSIDE API !");
 
   const { walletAddress, asset } = req.body;
-  console.log("walletAddress----", walletAddress);
-  console.log("asset----", asset);
 
   // These should ideally be stored securely in environment variables
   const accessId = "11EAF-26E7E-3BA2335";
@@ -314,6 +312,20 @@ router.post("/verify-aml", async (req, res) => {
     res.json(response.data);
   } catch (error) {
     console.error("Error during API call:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+router.get("/proxy/coins", async (req, res) => {
+  try {
+    const response = await axios.get(
+      "https://extrnlapiendpoint.silencatech.com/coins/"
+    );
+    console.log("response.data COINS => ", response.data);
+
+    res.json(response.data); // Forward the API response to your frontend
+  } catch (error) {
+    console.error("Error fetching data from API:", error.message);
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
