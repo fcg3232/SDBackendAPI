@@ -53,6 +53,19 @@ app.use(
 
 app.use(bodyParser.json({ limit: "50000mb" }));
 
+app.use((req, res, next) => {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader(
+    "Access-Control-Allow-Methods",
+    "GET, POST, OPTIONS, PUT, PATCH, DELETE"
+  );
+  res.setHeader(
+    "Access-Control-Allow-Headers",
+    "X-Requested-With, content-type, authorization"
+  );
+  next();
+});
+
 // app.use(express.static(path.join(__dirname, "./frontend/dist")));
 
 // app.get("/", (req, res) => {
