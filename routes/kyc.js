@@ -319,14 +319,14 @@ router.post("/verify-aml", async (req, res) => {
 router.get("/proxy/coins", async (req, res) => {
   try {
     const response = await axios.get(
-      "https://extrnlapiendpoint.silencatech.com/coins/",
-      {
-        headers: {
-          Authorization: "Bearer e31169640d9147493929ab77c9128470b16d",
-          Accept: "application/json",
-        },
-      }
+      "https://extrnlapiendpoint.silencatech.com/coins/"
     );
+    // {
+    //   headers: {
+    //     Authorization: "Bearer e31169640d9147493929ab77c9128470b16d",
+    //     Accept: "application/json",
+    //   },
+    // }
     console.log("response.data COINS => ", response.data);
 
     res.json(response.data); // Forward the API response to your frontend
