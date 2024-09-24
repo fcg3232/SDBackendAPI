@@ -145,9 +145,9 @@ app.get("/register", (req, res) => {
   res.send("sending mail");
 });
 
-app.get("/products", (req, res) => {
-  res.send(products);
-});
+// app.get("/products", (req, res) => {
+//   res.send(products);
+// });
 
 app.get("/personaldb", (req, res) => {
   res.send(personaldb);
@@ -157,20 +157,20 @@ app.get("/personaldb", (req, res) => {
   res.send(personaldb);
 });
 
-app.get("/kyc", (req, res) => {
-  res.send(kyc);
-});
+// app.get("/kyc", (req, res) => {
+//   res.send(kyc);
+// });
 
-app.get("/propLLC", (req, res) => {
-  res.send(propLLC);
-});
+// app.get("/propLLC", (req, res) => {
+//   res.send(propLLC);
+// });
 
-app.get("/propertyInfo", (req, res) => {
-  res.send(propertyInfo);
-});
-app.get("/blogdb", (req, res) => {
-  res.send(blogdb);
-});
+// app.get("/propertyInfo", (req, res) => {
+//   res.send(propertyInfo);
+// });
+// app.get("/blogdb", (req, res) => {
+//   res.send(blogdb);
+// });
 
 app.get("/users", (req, res) => {
   res.send(users);
