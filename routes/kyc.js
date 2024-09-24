@@ -83,8 +83,10 @@ router.post("/kyc-callback", async (req, res) => {
   const calculatedHash = hmac.update(encodedBody).digest("hex");
 
   if (req.headers["x-data-integrity"] === calculatedHash) {
-    const { applicant_id, verification_id, applicant } = JSON.parse(rawBody);
-
+    const { applicant_id, verification_id, applicant, type } =
+      JSON.parse(rawBody);
+    console.log("applicant => ", applicant);
+    console.log("type => ", type);
     const { external_applicant_id } = applicant;
 
     try {
