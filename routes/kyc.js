@@ -71,16 +71,11 @@ router.post("/", async (req, res) => {
 });
 
 router.post("/kyc-callback", async (req, res) => {
-  // Step 1: Ensure raw body is captured and exists
   const rawBody = req.rawBody.toString("utf-8");
   if (!rawBody) {
     console.error("Raw body is undefined");
     return res.status(400).send("Raw body is missing");
   }
-
-  console.log("Received raw body:", rawBody);
-
-  console.log("x-data-integrity header:", req.headers["x-data-integrity"]);
 
   const encodedBody = Buffer.from(rawBody, "utf-8").toString("base64");
   const apiToken = "e31169640d9147493929ab77c9128470b16d"; // Your actual API token
@@ -88,23 +83,7 @@ router.post("/kyc-callback", async (req, res) => {
   const calculatedHash = hmac.update(encodedBody).digest("hex");
 
   if (req.headers["x-data-integrity"] === calculatedHash) {
-    console.log("Callback verification successful");
-    console.log("Calculated hash:", calculatedHash);
-
-    // Step 2: Handle different types of KYC callbacks
-    const {
-      type,
-      applicant_id,
-      verification_id,
-      applicant,
-      // verification_status,
-      verification_attempts_left,
-      status,
-      verified,
-      verification_status,
-      verifications,
-      // applicant,
-    } = JSON.parse(rawBody);
+    const { applicant_id, verification_id, applicant } = JSON.parse(rawBody);
 
     const { external_applicant_id } = applicant;
 
@@ -127,127 +106,12 @@ router.post("/kyc-callback", async (req, res) => {
       await kycRecord.save();
 
       await User.findOneAndUpdate(
-        { _id: mongoose.Types.ObjectId(external_applicant_id) }, // assuming applicant_id exists in User collection
+        { _id: mongoose.Types.ObjectId(external_applicant_id) },
         { applicant_id: applicant_id, verification_id: verification_id },
         { new: true }
       );
 
       return res.status(200).send("Verification status updated successfully.");
-
-      // Step 3: Handle `VERIFICATION_STATUS_CHANGED`
-      // if (type === "VERIFICATION_STATUS_CHANGED") {
-      //   if (!kycRecord) {
-      //     kycRecord = new Kyc({ applicant_id });
-      //   }
-
-      //   kycRecord.verification_id = verification_id;
-      //   kycRecord.status = verification_status;
-      //   kycRecord.type = type;
-      //   kycRecord.verification_attempts_left =
-      //     verification_attempts_left === "unlimited"
-      //       ? -1
-      //       : verification_attempts_left;
-
-      //   // Add status change to history
-      //   kycRecord.history.push({
-      //     verification_id,
-      //     status: verification_status,
-      //     type: type,
-      //     timestamp: new Date(),
-      //     verification_attempts_left:
-      //       verification_attempts_left === "unlimited"
-      //         ? -1
-      //         : verification_attempts_left,
-      //   });
-
-      //   await kycRecord.save();
-
-      // await User.findOneAndUpdate(
-      //   { applicant_id: applicant_id }, // assuming applicant_id exists in User collection
-      //   { applicant_id: applicant_id, verification_id: verification_id },
-      //   { new: true }
-      // );
-
-      //   console.log(
-      //     "VERIFICATION_STATUS_CHANGED => Verification status updated successfully."
-      //   );
-
-      // return res
-      //   .status(200)
-      //   .send("Verification status updated successfully.");
-      // }
-
-      // Step 4: Handle `VERIFICATION_COMPLETED`
-      // else if (type === "VERIFICATION_COMPLETED") {
-      //   if (!kycRecord) {
-      //     kycRecord = new Kyc({ applicant_id });
-      //   }
-
-      //   const profile = (verifications && verifications.profile) || {
-      //     verified: false,
-      //     comment: "",
-      //     decline_reasons: [],
-      //   };
-      //   const document = (verifications && verifications.document) || {
-      //     verified: false,
-      //     comment: "",
-      //     decline_reasons: [],
-      //   };
-
-      //   // Update KYC data
-      //   kycRecord.verification_id = verification_id;
-      //   kycRecord.status = status;
-      //   kycRecord.type = type;
-      //   kycRecord.verified = verified;
-      //   kycRecord.verification_attempts_left =
-      //     verification_attempts_left === "unlimited"
-      //       ? -1
-      //       : verification_attempts_left;
-
-      //   // Conditionally update verifications only if the status is rejected
-      //   if (status === "rejected") {
-      //     kycRecord.verifications = { profile, document };
-      //   }
-
-      //   // Optionally store applicant info if provided
-      //   if (applicant) {
-      //     kycRecord.applicant = applicant;
-      //   }
-
-      //   // Add verification completion to history
-      //   kycRecord.history.push({
-      //     verification_id,
-      //     status: status,
-      //     verifications: { profile, document },
-      //     timestamp: new Date(),
-      //     type: type,
-      //     verification_attempts_left:
-      //       verification_attempts_left === "unlimited"
-      //         ? -1
-      //         : verification_attempts_left,
-      //   });
-
-      //   await kycRecord.save();
-
-      //   await User.findOneAndUpdate(
-      //     { applicant_id: applicant_id }, // assuming applicant_id exists in User collection
-      //     { applicant_id: applicant_id, verification_id: verification_id },
-      //     { new: true }
-      //   );
-
-      //   console.log(
-      //     "VERIFICATION_COMPLETED => Verification completed and updated successfully."
-      //   );
-      // return res
-      //   .status(200)
-      //   .send("Verification completed and updated successfully.");
-      // }
-
-      // Step 5: Handle unknown callback types
-      // else {
-      //   console.error(`Unknown callback type: ${type}`);
-      //   return res.status(400).send(`Unknown callback type: ${type}`);
-      // }
     } catch (error) {
       console.error("Error processing KYC callback:", error);
       return res.status(500).send("Error processing callback");
