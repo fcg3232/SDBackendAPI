@@ -53,6 +53,30 @@ router.get("/find/:external_applicant_id", async (req, res) => {
   }
 });
 
+// PATCH UPDATE KYC
+router.patch("/:external_applicant_id", async (req, res) => {
+  try {
+    const { AMLAddressVerification } = req.body;
+
+    const updatedKyc = await Kyc.findOneAndUpdate(
+      { external_applicant_id: req.params.external_applicant_id },
+      { AMLAddressVerification },
+      { new: true }
+    );
+
+    if (!updatedKyc) {
+      return res.status(404).send("KYC record not found.");
+    }
+
+    res.status(200).send({
+      ...updatedKyc._doc,
+      AMLAddressVerification,
+    });
+  } catch (error) {
+    res.status(500).send(error);
+  }
+});
+
 router.post("/", async (req, res) => {
   try {
     const result = new Kyc({
@@ -128,24 +152,6 @@ router.post("/kyc-callback", async (req, res) => {
 //   const stringToHash = `${walletAddress}:${accessKey}:${accessId}`;
 //   return crypto.createHash("md5").update(stringToHash).digest("hex");
 // }
-
-// PATCH UPDATE USER
-router.patch("/:id", async (req, res) => {
-  try {
-    const { AMLAddressVerification } = req.body;
-
-    const updatedKyc = await Kyc.findByIdAndUpdate(req.params.id, {
-      AMLAddressVerification,
-    });
-
-    res.status(200).send({
-      ...updatedKyc._doc,
-      AMLAddressVerification,
-    });
-  } catch (error) {
-    res.status(500).send(error);
-  }
-});
 
 router.post("/verify-aml", async (req, res) => {
   console.log("INSIDE API !");
