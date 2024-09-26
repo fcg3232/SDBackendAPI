@@ -38,6 +38,7 @@ const kycSchema = new mongoose.Schema({
   //   },
   // },
   // applicant: { type: applicantSchema },
+  AMLAddressVerification: { type: mongoose.Schema.Types.Mixed },
   external_applicant_id: { type: String, required: true },
   kyc_data: { type: mongoose.Schema.Types.Mixed },
 

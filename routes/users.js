@@ -59,23 +59,20 @@ router.get("/find/:id", async (req, res) => {
 // PATCH UPDATE USER
 router.patch("/:id", isUser, async (req, res) => {
   try {
-    const {applicant_id, verification_id} = req.body;
+    const { verification_id } = req.body;
 
     const updatedUser = await User.findByIdAndUpdate(req.params.id, {
-      applicant_id,
-      verification_id
+      verification_id,
     });
 
     res.status(200).send({
       ...updatedUser._doc,
-      applicant_id,
-      verification_id
+      verification_id,
     });
   } catch (error) {
     res.status(500).send(error);
   }
 });
-
 
 router.put("/isaccept/:id", isUser, async (req, res) => {
   try {
