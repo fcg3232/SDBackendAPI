@@ -45,6 +45,7 @@ router.get("/find/:external_applicant_id", async (req, res) => {
     }
 
     res.status(200).send({
+      AMLAddressVerification: kycCheck.AMLAddressVerification,
       kyc_data: kycCheck.kyc_data,
       history: kycCheck.history,
     });
