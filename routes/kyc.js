@@ -129,6 +129,24 @@ router.post("/kyc-callback", async (req, res) => {
 //   return crypto.createHash("md5").update(stringToHash).digest("hex");
 // }
 
+// PATCH UPDATE USER
+router.patch("/:id", async (req, res) => {
+  try {
+    const { AMLAddressVerification } = req.body;
+
+    const updatedKyc = await Kyc.findByIdAndUpdate(req.params.id, {
+      AMLAddressVerification,
+    });
+
+    res.status(200).send({
+      ...updatedKyc._doc,
+      AMLAddressVerification,
+    });
+  } catch (error) {
+    res.status(500).send(error);
+  }
+});
+
 router.post("/verify-aml", async (req, res) => {
   console.log("INSIDE API !");
 
