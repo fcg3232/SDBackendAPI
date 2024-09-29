@@ -171,4 +171,60 @@ router.get("/stats", isAdmin, async (req, res) => {
   }
 });
 
+router.patch("/wallet/update/:id", async (req, res) => {
+  const { walletAddresses, activeWallet } = req.body;
+
+  if (!walletAddresses || !activeWallet) {
+    return res
+      .status(400)
+      .send("Wallet addresses and active wallet are required");
+  }
+
+  const userId = req.params.id;
+
+  try {
+    // Find the user in the database
+    let user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).send("User not found");
+    }
+
+    // Go through the list of walletAddresses and add them to the user's wallets if not already present
+    walletAddresses.forEach((walletAddress) => {
+      const existingWallet = user.wallets.find(
+        (wallet) => wallet.address === walletAddress
+      );
+
+      // Add the wallet if it doesn't already exist in the user's wallet array
+      if (!existingWallet) {
+        user.wallets.push({
+          address: walletAddress,
+          active: walletAddress === activeWallet, // Mark it as active if it's the active one
+        });
+      } else {
+        // If the wallet already exists, just update the active status
+        existingWallet.active = walletAddress === activeWallet;
+      }
+    });
+
+    // Ensure only one wallet is active at a time
+    user.wallets = user.wallets.map((wallet) => ({
+      ...wallet,
+      active: wallet.address === activeWallet, // Set the active flag for the correct wallet
+    }));
+
+    // Save the updated user document
+    await user.save();
+
+    res.send({
+      message: "Wallets updated successfully",
+      wallets: user.wallets,
+    });
+  } catch (error) {
+    console.error("Error updating wallets:", error);
+    res.status(500).send("Server error");
+  }
+});
+
 module.exports = router;
