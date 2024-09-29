@@ -50,6 +50,7 @@ router.get("/find/:id", async (req, res) => {
       verification_id: user.verification_id,
       isAdmin: user.isAdmin,
       isAccept: user.isAccept,
+      wallets: user.wallets,
     });
   } catch (error) {
     res.status(500).send(error);
