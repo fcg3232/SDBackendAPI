@@ -3,6 +3,7 @@ const mongoose = require("mongoose");
 const walletSchema = new mongoose.Schema({
   address: { type: String, required: true },
   active: { type: Boolean, default: false },
+  addressVerificationStatus: { type: Object, default: null },
 });
 
 const userSchema = new mongoose.Schema(
