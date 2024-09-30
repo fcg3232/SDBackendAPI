@@ -202,15 +202,14 @@ router.patch("/wallet/update/:id", async (req, res) => {
         user.wallets.push({
           address: walletAddress,
           active: walletAddress === activeWallet, // Mark it as active if it's the active one
-          addressVerificationStatus: amlStatusUpdate?.[walletAddress] || null,
+          addressVerificationStatus: amlStatusUpdate?.data || null,
         });
       } else {
         // If the wallet already exists, just update the active status
         existingWallet.active = walletAddress === activeWallet;
 
-        if (amlStatusUpdate && amlStatusUpdate[walletAddress]) {
-          existingWallet.addressVerificationStatus =
-            amlStatusUpdate[walletAddress];
+        if (amlStatusUpdate && amlStatusUpdate.data) {
+          existingWallet.addressVerificationStatus = amlStatusUpdate.data;
         }
       }
     });
