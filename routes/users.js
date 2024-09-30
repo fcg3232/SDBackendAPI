@@ -237,4 +237,46 @@ router.patch("/wallet/update/:id", async (req, res) => {
   }
 });
 
+router.patch("/wallet/disconnect/:id", async (req, res) => {
+  const { walletAddress } = req.body; // Get wallet address from the request body
+
+  if (!walletAddress) {
+    return res.status(400).send("Wallet address is required");
+  }
+
+  const userId = req.params.id; // Get user ID from the route parameters
+
+  try {
+    // Find the user in the database
+    let user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).send("User not found");
+    }
+
+    // Find the wallet by its address
+    const existingWallet = user.wallets.find(
+      (wallet) => wallet.address === walletAddress
+    );
+
+    if (!existingWallet) {
+      return res.status(404).send("Wallet not found");
+    }
+
+    // Mark the wallet as inactive
+    existingWallet.active = false;
+
+    // Save the updated user document
+    await user.save();
+
+    res.send({
+      message: `Wallet ${walletAddress} marked as inactive`,
+      wallets: user.wallets,
+    });
+  } catch (error) {
+    console.error("Error marking wallet as inactive:", error);
+    res.status(500).send("Server error");
+  }
+});
+
 module.exports = router;
