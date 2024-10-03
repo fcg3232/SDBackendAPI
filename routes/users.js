@@ -173,7 +173,8 @@ router.get("/stats", isAdmin, async (req, res) => {
 });
 
 router.patch("/wallet/update/:id", async (req, res) => {
-  const { walletAddresses, activeWallet, amlStatusUpdate } = req.body;
+  const { walletAddresses, activeWallet, amlStatusUpdate, evaluationResult } =
+    req.body;
 
   if (!walletAddresses || !activeWallet) {
     return res
@@ -197,6 +198,10 @@ router.patch("/wallet/update/:id", async (req, res) => {
         (wallet) => wallet.address === walletAddress
       );
 
+      // Extract the evaluationResult's status and reason from the request
+      const riskStatus = evaluationResult?.status || "Safe"; // Default to "Safe" if no evaluationResult is provided
+      const riskReason = evaluationResult?.reason || "No evaluation performed"; // Default reason if none provided
+
       // Add the wallet if it doesn't already exist in the user's wallet array
       if (!existingWallet) {
         user.wallets.push({
@@ -206,14 +211,18 @@ router.patch("/wallet/update/:id", async (req, res) => {
             walletAddress === activeWallet
               ? amlStatusUpdate || null // Only set for the active wallet
               : null,
+          riskStatus: riskStatus, // Store the risk evaluation status ("Risky" or "Safe")
+          riskReason: riskReason, // Store the reason for the risk evaluation
         });
       } else {
         // If the wallet already exists, just update the active status
         existingWallet.active = walletAddress === activeWallet;
 
-        // Update the addressVerificationStatus only for the active wallet
-        if (walletAddress === activeWallet && amlStatusUpdate?.data) {
+        // Update the addressVerificationStatus and risk details only for the active wallet
+        if (walletAddress === activeWallet) {
           existingWallet.addressVerificationStatus = amlStatusUpdate;
+          existingWallet.riskStatus = riskStatus; // Update the risk evaluation status
+          existingWallet.riskReason = riskReason; // Update the reason for the risk
         }
       }
     });
