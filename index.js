@@ -1,7 +1,6 @@
 const express = require("express");
 const cors = require("cors");
 const bodyParser = require("body-parser");
-const logger = require("morgan");
 const path = require("path");
 const multer = require("multer");
 const mongoose = require("mongoose");
@@ -11,7 +10,6 @@ const orders = require("./routes/orders");
 const stripe = require("./routes/stripe");
 const users = require("./routes/users");
 const productsRoute = require("./routes/products");
-const { Property } = require("./models/personal");
 const personaldb = require("./routes/personaldb");
 const propertydb = require("./routes/propertiesdb");
 const propllc = require("./routes/propLLC");
@@ -119,11 +117,7 @@ app.use("/api/buyerOrder", buyerOrder);
 app.use("/api/sellerOrder", sellerOrder);
 app.use("/api/orderMatching", orderMatching);
 
-// app.get("/", (req, res) => {
-//   res.send("Welcome our to online shop API...");
-// });
 
-// console.log(Property);
 app.get("/orderMatching", (req, res) => {
   res.send(orderMatching);
 });
@@ -157,20 +151,6 @@ app.get("/personaldb", (req, res) => {
   res.send(personaldb);
 });
 
-// app.get("/kyc", (req, res) => {
-//   res.send(kyc);
-// });
-
-// app.get("/propLLC", (req, res) => {
-//   res.send(propLLC);
-// });
-
-// app.get("/propertyInfo", (req, res) => {
-//   res.send(propertyInfo);
-// });
-// app.get("/blogdb", (req, res) => {
-//   res.send(blogdb);
-// });
 
 app.get("/users", (req, res) => {
   res.send(users);
