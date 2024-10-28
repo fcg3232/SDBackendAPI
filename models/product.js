@@ -14,7 +14,7 @@ const propertySchema = new mongoose.Schema(
     date: {type: Date, default: new Date()},
     desc: { type: String},
     image: { type: Object, required: true },
-    tokenHolder: {type: [String]},
+    tokenHolder: {type: [Object]},
   },
   { timestamps: true }
 );
