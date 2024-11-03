@@ -11,183 +11,211 @@ https://lightsail.aws.amazon.com/ls/webapp/home/instances
 
 
 
-# Complete API Documentation
 
-## Category Management
-### 1. Create Category
-- **Location**: `./routes/categorydb.js`
-- **Endpoint**: `POST /api/category`
-- **Functionality**: Creates a new category in the database.
-- **Access Level**: Public
-- **Input**: `req.body` containing category details
-- **Output**:
-  - **200**: Newly created category object
-  - **500**: Server error if creation fails
+# SecondaryDAO API Documentation
 
-### 2. Get All Categories
-- **Location**: `./routes/categorydb.js`
-- **Endpoint**: `GET /api/category`
-- **Functionality**: Retrieves all categories.
-- **Access Level**: Public
-- **Output**:
-  - **200**: List of all categories
-  - **500**: Server error if retrieval fails
+## 1. Getting Started
 
-## User Authentication
-### 3. Login
-- **Location**: `./routes/login.js`
-- **Endpoint**: `POST /api/login`
-- **Functionality**: Authenticates a user by email and password.
-- **Access Level**: Public
-- **Input**: `req.body` with `email` and `password`
-- **Output**:
-  - **200**: JWT token if authentication succeeds
-  - **400**: "Invalid email or password" on failure
+### 1.1 Main Information
+- **Base URL (Development)**: `http://localhost:5000/api`
+- **Base URL (Production)**: `https://api.secondarydao.com/api`
+- **Headers**:
+  - `Content-Type: application/json`
+  - `Authorization: <Token>`
 
-## User Management
-### 4. Get All Users
-- **Location**: `./routes/users.js`
-- **Endpoint**: `GET /api/users`
-- **Functionality**: Retrieves a list of all users (Admin access required).
-- **Access Level**: Admin
-- **Output**:
-  - **200**: List of user objects
-  - **500**: Server error if retrieval fails
+---
 
-### 5. Get User by ID
-- **Location**: `./routes/users.js`
-- **Endpoint**: `GET /api/users/find/:id`
-- **Functionality**: Retrieves user details by ID.
-- **Access Level**: Public
-- **Input**: `req.params.id` (User ID)
-- **Output**:
-  - **200**: User details
-  - **500**: Server error if retrieval fails
+## 2. API Endpoints
 
-### 6. Update User
-- **Location**: `./routes/users.js`
-- **Endpoint**: `PUT /api/users/:id`
-- **Functionality**: Updates user information by ID.
-- **Access Level**: Admin
-- **Input**: `req.params.id` and `req.body` (Updated user data)
-- **Output**:
-  - **200**: Confirmation of update
-  - **500**: Server error if update fails
+### 2.1 User Registration and Authentication
 
-### 7. Delete User
-- **Location**: `./routes/users.js`
-- **Endpoint**: `DELETE /api/users/:id`
-- **Functionality**: Deletes a user by ID.
-- **Access Level**: Admin
-- **Input**: `req.params.id` (User ID)
-- **Output**:
-  - **200**: Confirmation of deletion
-  - **500**: Server error if deletion fails
-
-## Product Management
-### 8. Create Product
-- **Location**: `./routes/products.js`
-- **Endpoint**: `POST /api/products/:id`
-- **Functionality**: Creates a new product in the database.
-- **Access Level**: Admin
-- **Input**: `req.body` with product details
-- **Output**:
-  - **200**: Created product object
-  - **500**: Server error if creation fails
-
-### 9. Update Token Price
-- **Location**: `./routes/products.js`
-- **Endpoint**: `GET /api/products/update/:id`
-- **Functionality**: Updates the token price for a product.
-- **Access Level**: Admin
-- **Input**: `req.params.id` (Product ID)
-- **Output**:
-  - **200**: Transaction receipt
-  - **500**: Server error if update fails
-
-### 10. Delete Product
-- **Location**: `./routes/products.js`
-- **Endpoint**: `DELETE /api/products/:id`
-- **Functionality**: Deletes a product by its ID.
-- **Access Level**: Admin
-- **Input**: `req.params.id` (Product ID)
-- **Output**:
-  - **200**: Confirmation of deletion
-  - **500**: Server error if deletion fails
-
-## Order Management
-### 11. Create Order Match
-- **Location**: `./routes/orderMatching.js`
-- **Endpoint**: `POST /api/orderMatching`
-- **Functionality**: Creates an order match entry between buyer and seller.
-- **Access Level**: Public
-- **Input**: `req.body` with details such as `orderId`, `BuyersAddress`, and `SellersAddress`
-- **Output**:
-  - **200**: Saved order matching object
-  - **500**: Server error if creation fails
-
-### 12. Approve Order Match
-- **Location**: `./routes/orderMatching.js`
-- **Endpoint**: `PUT /api/orderMatching/approve/:id`
-- **Functionality**: Approves an order match.
-- **Access Level**: Admin
-- **Input**: `req.params.id` (Order match ID)
-- **Output**:
-  - **200**: Approval confirmation
-  - **500**: Server error if approval fails
-
-### 13. Delete Order Match
-- **Location**: `./routes/orderMatching.js`
-- **Endpoint**: `DELETE /api/orderMatching/:id`
-- **Functionality**: Deletes an order match by ID.
-- **Access Level**: Admin
-- **Input**: `req.params.id` (Order match ID)
-- **Output**:
-  - **200**: Confirmation of deletion
-  - **500**: Server error if deletion fails
-
-## Seller Orders
-### 14. Create Seller Order
-- **Location**: `./routes/sellerOrder.js`
-- **Endpoint**: `POST /api/sellerOrder`
-- **Functionality**: Creates a new seller order.
-- **Access Level**: Public
-- **Input**: `req.body` containing order details
-- **Output**:
-  - **200**: Newly created seller order object
-  - **500**: Server error if creation fails
-
-### 15. Delete Seller Order
-- **Location**: `./routes/sellerOrder.js`
-- **Endpoint**: `DELETE /api/sellerOrder/:id`
-- **Functionality**: Deletes a seller order by its ID.
-- **Access Level**: Admin
-- **Input**: `req.params.id` (Seller order ID)
-- **Output**:
-  - **200**: Confirmation of deletion
-  - **500**: Server error if deletion fails
-
-## User Registration
-### 16. Register User
+#### Register User
 - **Location**: `./routes/register.js`
-- **Endpoint**: `POST /api/register`
-- **Functionality**: Registers a new user and creates a wallet address for them.
-- **Access Level**: Public
-- **Input**: `req.body` containing user details like name, email, and password
-- **Output**:
-  - **200**: JWT token for the new user
-  - **500**: Error if registration fails
+- **Endpoint URL**: `https://api.secondarydao.com/api/register`
+- **HTTP Method**: POST
+- **Description**: Register a new user
+- **Request Body**:
+  ```json
+  {
+    "First_name": "User's first name",
+    "Last_name": "User's last name",
+    "phone": "Mobile number",
+    "email": "Email Address",
+    "dateofBirth": "Date of Birth",
+    "Residence_country": "Country of residence",
+    "Nationality": "Nationality",
+    "Password": "At least 8 characters"
+  }
+  ```
 
-## KYC Management
-### 17. KYC Verification Callback
-- **Location**: `./routes/kyc.js`
-- **Endpoint**: `POST /api/kyc/kyc-callback`
-- **Functionality**: Handles KYC verification callback data.
-- **Access Level**: Public
-- **Input**: `req.body` containing KYC verification data
-- **Output**:
-  - **200**: Confirmation of verification update
-  - **500**: Server error if update fails
+#### User Login
+- **Location**: `./routes/login.js`
+- **Endpoint URL**: `https://api.secondarydao.com/api/login`
+- **HTTP Method**: POST
+- **Description**: User login
+- **Request Body**:
+  ```json
+  {
+    "email": "User's email address",
+    "password": "User's password"
+  }
+  ```
+
+---
+
+### 2.2 User Management Endpoints
+
+#### Fetch All Users (Admin Only)
+- **Location**: `./routes/users.js`
+- **Endpoint URL**: `https://api.secondarydao.com/api/users`
+- **HTTP Method**: GET
+- **Description**: Fetch a list of all users (Admin only)
+
+#### Delete User by ID
+- **Location**: `./routes/users.js`
+- **Endpoint URL**: `https://api.secondarydao.com/api/:id`
+- **HTTP Method**: DELETE
+- **Description**: Delete a specific user
+
+#### Get User by ID
+- **Location**: `./routes/users.js`
+- **Endpoint URL**: `https://api.secondarydao.com/api/find/:id`
+- **HTTP Method**: GET
+- **Description**: Retrieve a specific user by ID
+
+#### Update User During KYC
+- **Location**: `./routes/users.js`
+- **Endpoint URL**: `https://api.secondarydao.com/api/:id`
+- **HTTP Method**: PATCH
+- **Description**: Update user details during KYC process
+
+#### Accept Terms and Conditions
+- **Location**: `./routes/users.js`
+- **Endpoint URL**: `https://api.secondarydao.com/api/isaccept/:id`
+- **HTTP Method**: PUT
+- **Description**: Update user status upon accepting the Terms and Conditions
+
+#### Update User
+- **Location**: `./routes/users.js`
+- **Endpoint URL**: `https://api.secondarydao.com/api/:id`
+- **HTTP Method**: PUT
+- **Description**: General user update
+
+#### Update User Wallet Public Key
+- **Location**: `./routes/users.js`
+- **Endpoint URL**: `https://api.secondarydao.com/api/wallet/update/:id`
+- **HTTP Method**: PATCH
+- **Description**: Update user's wallet public key
+
+---
+
+### 2.3 Product Management
+
+#### Create Property
+- **Location**: `./routes/products.js`
+- **Endpoint URL**: `https://api.secondarydao.com/api/products`
+- **HTTP Method**: POST
+- **Description**: Create a new property listing
+- **Request Body**:
+  ```json
+  {
+    "uid": "Property unique ID",
+    "name": "Property Name",
+    "AdminWallet": "Admin's wallet address",
+    "location": "Property Location",
+    "propertyType": "Type of Property",
+    "bedroom": "Number of bedrooms",
+    "bathroom": "Number of bathrooms",
+    "propertyaddress": "Physical address",
+    "date": "Listed date",
+    "desc": "Property description",
+    "image": "Property image URL"
+  }
+  ```
+
+#### Update Property Token Price
+- **Location**: `./routes/products.js`
+- **Endpoint URL**: `https://api.secondarydao.com/api/products/update/:id`
+- **HTTP Method**: GET
+- **Description**: Updates the token price by calling a smart contract
+
+#### Delete Property
+- **Location**: `./routes/products.js`
+- **Endpoint URL**: `https://api.secondarydao.com/api/products/:id`
+- **HTTP Method**: DELETE
+- **Description**: Delete a listed property
+
+#### Get All Properties
+- **Location**: `./routes/products.js`
+- **Endpoint URL**: `https://api.secondarydao.com/api/products`
+- **HTTP Method**: GET
+- **Description**: Retrieve all properties listed on the marketplace
+
+---
+
+### 2.4 Order Management
+
+#### Place Buy Order
+- **Location**: `./routes/buyerOrder.js`
+- **Endpoint URL**: `https://api.secondarydao.com/api/buyerOrder`
+- **HTTP Method**: POST
+- **Description**: Place a buy order for property tokens
+
+#### Approve Buy Order
+- **Location**: `./routes/buyerOrder.js`
+- **Endpoint URL**: `https://api.secondarydao.com/api/buyerOrder/:id`
+- **HTTP Method**: PATCH
+- **Description**: Approve tokens on behalf of buyers using permit functionality
+
+#### Fetch Buy Orders by Property Address
+- **Location**: `./routes/buyerOrder.js`
+- **Endpoint URL**: `https://api.secondarydao.com/api/buyerOrder/find/:PropertyAddress`
+- **HTTP Method**: GET
+- **Description**: Get all buyer orders for a specific property address
+
+---
+
+### 2.5 Additional Endpoints
+
+#### Change Password
+- **Location**: `./routes/changePassword.js`
+- **Endpoint URL**: `https://api.secondarydao.com/api/changePassword`
+- **HTTP Method**: POST
+- **Description**: API for changing password
+- **Request Body**:
+  ```json
+  {
+    "email": "User email",
+    "password": "New password"
+  }
+  ```
+
+#### Blog Management
+- **Location**: `./routes/blogdb.js`
+- **Create Blog Post**
+  - **Endpoint URL**: `https://api.secondarydao.com/api/blogdb`
+  - **HTTP Method**: POST
+  - **Description**: Create a new blog post
+- **Retrieve All Blogs**
+  - **Endpoint URL**: `https://api.secondarydao.com/api/blogdb`
+  - **HTTP Method**: GET
+  - **Description**: Get all blogs
+- **Update Blog**
+  - **Endpoint URL**: `https://api.secondarydao.com/api/blogdb/:id`
+  - **HTTP Method**: PUT
+  - **Description**: Update an existing blog post
+
+---
+
+## 3. Common Response Codes
+
+- **200**: OK - Request was successful
+- **400**: Bad Request - Invalid details or missing data
+- **401**: Authentication Error - Invalid or missing token
+- **404**: Not Found - Resource not found
+- **429**: Too Many Requests - Rate limit exceeded
+- **503**: Service Unavailable - Server currently unavailable
+
 - **Input**: `req.params.id` (Order match ID)
 - **Output**:
   - **200**: Confirmation of deletion
