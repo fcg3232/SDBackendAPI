@@ -10,13 +10,14 @@ Secondary-dao-api
 https://lightsail.aws.amazon.com/ls/webapp/home/instances
 
 
+
 # Complete API Documentation
 
 ## Category Management
 ### 1. Create Category
 - **Location**: `./routes/categorydb.js`
 - **Endpoint**: `POST /api/category`
-- **Functionality**: Creates a new category.
+- **Functionality**: Creates a new category in the database.
 - **Access Level**: Public
 - **Input**: `req.body` containing category details
 - **Output**:
@@ -32,40 +33,38 @@ https://lightsail.aws.amazon.com/ls/webapp/home/instances
   - **200**: List of all categories
   - **500**: Server error if retrieval fails
 
-
 ## User Authentication
 ### 3. Login
 - **Location**: `./routes/login.js`
 - **Endpoint**: `POST /api/login`
-- **Functionality**: Authenticates a user.
+- **Functionality**: Authenticates a user by email and password.
 - **Access Level**: Public
 - **Input**: `req.body` with `email` and `password`
 - **Output**:
   - **200**: JWT token if authentication succeeds
   - **400**: "Invalid email or password" on failure
 
-
 ## User Management
 ### 4. Get All Users
 - **Location**: `./routes/users.js`
 - **Endpoint**: `GET /api/users`
-- **Functionality**: Retrieves a list of all users.
+- **Functionality**: Retrieves a list of all users (Admin access required).
 - **Access Level**: Admin
 - **Output**:
-  - **200**: List of users
+  - **200**: List of user objects
   - **500**: Server error if retrieval fails
 
 ### 5. Get User by ID
 - **Location**: `./routes/users.js`
 - **Endpoint**: `GET /api/users/find/:id`
-- **Functionality**: Retrieves details of a specific user.
+- **Functionality**: Retrieves user details by ID.
 - **Access Level**: Public
 - **Input**: `req.params.id` (User ID)
 - **Output**:
   - **200**: User details
   - **500**: Server error if retrieval fails
 
-### 6. Update User by ID
+### 6. Update User
 - **Location**: `./routes/users.js`
 - **Endpoint**: `PUT /api/users/:id`
 - **Functionality**: Updates user information by ID.
@@ -85,12 +84,11 @@ https://lightsail.aws.amazon.com/ls/webapp/home/instances
   - **200**: Confirmation of deletion
   - **500**: Server error if deletion fails
 
-
 ## Product Management
 ### 8. Create Product
 - **Location**: `./routes/products.js`
 - **Endpoint**: `POST /api/products/:id`
-- **Functionality**: Creates a new product.
+- **Functionality**: Creates a new product in the database.
 - **Access Level**: Admin
 - **Input**: `req.body` with product details
 - **Output**:
@@ -100,7 +98,7 @@ https://lightsail.aws.amazon.com/ls/webapp/home/instances
 ### 9. Update Token Price
 - **Location**: `./routes/products.js`
 - **Endpoint**: `GET /api/products/update/:id`
-- **Functionality**: Updates the token price.
+- **Functionality**: Updates the token price for a product.
 - **Access Level**: Admin
 - **Input**: `req.params.id` (Product ID)
 - **Output**:
@@ -110,23 +108,22 @@ https://lightsail.aws.amazon.com/ls/webapp/home/instances
 ### 10. Delete Product
 - **Location**: `./routes/products.js`
 - **Endpoint**: `DELETE /api/products/:id`
-- **Functionality**: Deletes a product by ID.
+- **Functionality**: Deletes a product by its ID.
 - **Access Level**: Admin
 - **Input**: `req.params.id` (Product ID)
 - **Output**:
   - **200**: Confirmation of deletion
   - **500**: Server error if deletion fails
 
-
 ## Order Management
 ### 11. Create Order Match
 - **Location**: `./routes/orderMatching.js`
 - **Endpoint**: `POST /api/orderMatching`
-- **Functionality**: Creates an order match between buyer and seller.
+- **Functionality**: Creates an order match entry between buyer and seller.
 - **Access Level**: Public
-- **Input**: `req.body` with details like `orderId`, `BuyersAddress`, `SellersAddress`
+- **Input**: `req.body` with details such as `orderId`, `BuyersAddress`, and `SellersAddress`
 - **Output**:
-  - **200**: Order match object
+  - **200**: Saved order matching object
   - **500**: Server error if creation fails
 
 ### 12. Approve Order Match
@@ -144,6 +141,53 @@ https://lightsail.aws.amazon.com/ls/webapp/home/instances
 - **Endpoint**: `DELETE /api/orderMatching/:id`
 - **Functionality**: Deletes an order match by ID.
 - **Access Level**: Admin
+- **Input**: `req.params.id` (Order match ID)
+- **Output**:
+  - **200**: Confirmation of deletion
+  - **500**: Server error if deletion fails
+
+## Seller Orders
+### 14. Create Seller Order
+- **Location**: `./routes/sellerOrder.js`
+- **Endpoint**: `POST /api/sellerOrder`
+- **Functionality**: Creates a new seller order.
+- **Access Level**: Public
+- **Input**: `req.body` containing order details
+- **Output**:
+  - **200**: Newly created seller order object
+  - **500**: Server error if creation fails
+
+### 15. Delete Seller Order
+- **Location**: `./routes/sellerOrder.js`
+- **Endpoint**: `DELETE /api/sellerOrder/:id`
+- **Functionality**: Deletes a seller order by its ID.
+- **Access Level**: Admin
+- **Input**: `req.params.id` (Seller order ID)
+- **Output**:
+  - **200**: Confirmation of deletion
+  - **500**: Server error if deletion fails
+
+## User Registration
+### 16. Register User
+- **Location**: `./routes/register.js`
+- **Endpoint**: `POST /api/register`
+- **Functionality**: Registers a new user and creates a wallet address for them.
+- **Access Level**: Public
+- **Input**: `req.body` containing user details like name, email, and password
+- **Output**:
+  - **200**: JWT token for the new user
+  - **500**: Error if registration fails
+
+## KYC Management
+### 17. KYC Verification Callback
+- **Location**: `./routes/kyc.js`
+- **Endpoint**: `POST /api/kyc/kyc-callback`
+- **Functionality**: Handles KYC verification callback data.
+- **Access Level**: Public
+- **Input**: `req.body` containing KYC verification data
+- **Output**:
+  - **200**: Confirmation of verification update
+  - **500**: Server error if update fails
 - **Input**: `req.params.id` (Order match ID)
 - **Output**:
   - **200**: Confirmation of deletion
