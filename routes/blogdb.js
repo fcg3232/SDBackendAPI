@@ -1,256 +1,117 @@
-// const {Blog} = require("../models/blog");
-// const { auth, isUser, isAdmin } = require("../middleware/auth");
-// const cloudinary = require("../utils/cloudinary");
-
-// const router = require("express").Router();
-
-// //CREATE
-
-// router.post("/", async (req, res) => {
-//   const {title,desc,image, name,categories } = req.body;
-
-//   try {
-//     if (image) {
-//       const uploadedResponse = await cloudinary.uploader.upload(image, {
-//         upload_preset: "almonivepk",
-//       });
-
-//       if (uploadedResponse) {
-//         const blog = new Blog({
-//           title,
-//           desc,
-//           image: uploadedResponse,
-//           name,
-//           categories,
-        
-//         });
-
-//         const savedBlog = await blog.save();
-//         res.status(200).send(savedBlog);
-//       }
-//     }
-//   } catch (error) {
-//     console.log(error);
-//     res.status(500).send(error);
-//   }
-// });
-
-// //DELETE
-
-// router.delete("/:id", isAdmin, async (req, res) => {
-//   try {
-//     const product = await Blog.findById(req.params.id);
-
-//     if (!product) return res.status(404).send("Product not found...");
-
-//     if (product.image.public_id) {
-//       const destroyResponse = await cloudinary.uploader.destroy(
-//         product.image.public_id
-//       );
-
-//       if (destroyResponse) {
-//         const deletedProduct = await Blog.findByIdAndDelete(req.params.id);
-
-//         res.status(200).send(deletedProduct);
-//       }
-//     } else {
-//       console.log("Action terminated. Failed to deleted product image...");
-//     }
-//   } catch (error) {
-//     res.status(500).send(error);
-//   }
-// });
-
-// // EDIT PRODUCT
-
-// router.put("/:id", async (req, res) => {
-//   if (req.body.blogImg) {
-//     const destroyResponse = await cloudinary.uploader.destroy(
-//       req.body.blog.image.public_id
-//     );
-
-//     if (destroyResponse) {
-//       const uploadedResponse = await cloudinary.uploader.upload(
-//         req.body.blogImg,
-//         {
-//           upload_preset: "almonivepk",
-//         }
-//       );
-
-//       if (uploadedResponse) {
-//         const updatedProduct = await Blog.findByIdAndUpdate(
-//           req.params.id,
-//           {
-//             $set: {
-//               ...req.body.blog,
-//               image: uploadedResponse,
-//             },
-//           },
-//           { new: true }
-//         );
-
-//         res.status(200).send(updatedProduct);
-//       }
-//     }
-//   } else {
-//     try {
-//       const updatedProduct = await Blog.findByIdAndUpdate(
-//         req.params.id,
-//         {
-//           $set: req.body.blog,
-//         },
-//         { new: true }
-//       );
-//       res.status(200).send(updatedProduct);
-//     } catch (err) {
-//       res.status(500).send(err);
-//     }
-//   }
-// });
-
-// //GET ALL PRODUCTS
-
-// router.get("/", async (req, res) => {
-//   const qlocation = req.query.location;
-//   try {
-//     let products;
-
-//     if (qlocation) {
-//       products = await Blog.find({
-//         location: qlocation,
-//       }).sort({ _id: -1 });
-//     } else {
-//       products = await Blog.find().sort({ _id: -1 });
-//     }
-
-//     res.status(200).send(products);
-//   } catch (error) {
-//     res.status(500).send(error);
-//   }
-// });
-
-// //GET PRODUCT
-
-// router.get("/find/:id", async (req, res) => {
-//   try {
-//     const product = await Blog.findById(req.params.id);
-//     res.status(200).send(product);
-//   } catch (error) {
-//     res.status(500).send(error);
-//   }
-// });
-
-// module.exports = router;
-
-
-
-
-const {Blog} = require("../models/blog");
+// Import necessary modules and models
+const { Blog } = require("../models/blog");
 const express = require("express");
-// const router = require("express").Router();
 const router = express.Router();
-// const path = require('path');
-// const multer = require('multer');
 
-
-
-
-
-
-//CREATE POST
+// CREATE POST
 router.post("/", async (req, res) => {
-  // const { name,title,desc } = req.body;
-
   try {
-    // const newPost = new Blog({
-    //   title,
-    //   desc,
-    //   name
-    // });
-      const newPost = new Blog(req.body);
+    // Create a new blog post with the data from the request body
+    const newPost = new Blog(req.body);
+    // Save the new post to the database
     const savedPost = await newPost.save();
+    // Send the saved post as the response
     res.status(200).send(savedPost);
-    // res.status(200).json(savedPost);
   } catch (err) {
+    // Send an error response if something goes wrong
     res.status(500).json(err);
   }
 });
 
-//UPDATE POST
+// UPDATE POST
 router.put("/:id", async (req, res) => {
   try {
+    // Find the post by ID
     const post = await Blog.findById(req.params.id);
+    // Check if the post belongs to the user making the request
     if (post.name === req.body.name) {
       try {
+        // Update the post with the new data from the request body
         const updatedPost = await Blog.findByIdAndUpdate(
           req.params.id,
-          {
-            $set: req.body,
-          },
+          { $set: req.body },
           { new: true }
         );
+        // Send the updated post as the response
         res.status(200).json(updatedPost);
       } catch (err) {
+        // Send an error response if something goes wrong
         res.status(500).json(err);
       }
     } else {
+      // Send a forbidden response if the user is not authorized to update the post
       res.status(401).json("You can update only your post!");
     }
   } catch (err) {
+    // Send an error response if something goes wrong
     res.status(500).json(err);
   }
 });
 
-//DELETE POST
+// DELETE POST
 router.delete("/:id", async (req, res) => {
   try {
+    // Find the post by ID
     const post = await Blog.findById(req.params.id);
+    // Check if the post belongs to the user making the request
     if (post.name === req.body.name) {
       try {
+        // Delete the post from the database
         await post.delete();
+        // Send a success response
         res.status(200).json("Post has been deleted...");
       } catch (err) {
+        // Send an error response if something goes wrong
         res.status(500).json(err);
       }
     } else {
+      // Send a forbidden response if the user is not authorized to delete the post
       res.status(401).json("You can delete only your post!");
     }
   } catch (err) {
+    // Send an error response if something goes wrong
     res.status(500).json(err);
   }
 });
 
-//GET POST
+// GET POST
 router.get("/:id", async (req, res) => {
   try {
+    // Find the post by ID
     const post = await Blog.findById(req.params.id);
+    // Send the post as the response
     res.status(200).json(post);
   } catch (err) {
+    // Send an error response if something goes wrong
     res.status(500).json(err);
   }
 });
 
-//GET ALL POSTS
+// GET ALL POSTS
 router.get("/", async (req, res) => {
   const username = req.query.user;
   const catName = req.query.cat;
   try {
     let posts;
+    // If a username is provided, find posts by that user
     if (username) {
       posts = await Blog.find({ username });
+    // If a category name is provided, find posts in that category
     } else if (catName) {
       posts = await Blog.find({
-        categories: {
-          $in: [catName],
-        },
+        categories: { $in: [catName] },
       });
+    // If no query parameters are provided, find all posts
     } else {
       posts = await Blog.find();
     }
+    // Send the posts as the response
     res.status(200).json(posts);
   } catch (err) {
+    // Send an error response if something goes wrong
     res.status(500).json(err);
   }
 });
 
+// Export the router to be used in other parts of the application
 module.exports = router;

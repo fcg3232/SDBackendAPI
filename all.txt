@@ -1,0 +1,3772 @@
+Filename: ./routes/categorydb.js
+// const router = require("express").Router();
+const {Category} = require("../models/categoryblog");
+const express = require("express");
+const router = express.Router();
+router.post("/", async (req, res) => {
+  try {
+    const newCat = new Category(req.body);
+    const savedCat = await newCat.save();
+    res.status(200).send(savedCat);
+    // res.status(200).json(savedCat);
+  } catch (err) {
+    res.status(500).json(err);
+  }
+});
+
+router.get("/", async (req, res) => {
+    try {
+      const cats = await Category.find();
+      res.status(200).json(cats);
+    } catch (err) {
+      res.status(500).json(err);
+    }
+  });
+
+module.exports = router;
+Filename: ./routes/login.js
+const bcrypt = require("bcrypt");
+const { User } = require("../models/user");
+const Joi = require("joi");
+const express = require("express");
+const generateAuthToken = require("../utils/generateAuthToken");
+const router = express.Router();
+
+router.post("/", async (req, res) => {
+  const schema = Joi.object({
+    email: Joi.string().min(3).max(200).required().email(),
+    password: Joi.string().min(6).max(200).required(),
+  });
+
+  const { error } = schema.validate(req.body);
+
+  if (error) return res.status(400).send(error.details[0].message);
+
+  let user = await User.findOne({ email: req.body.email });
+  if (!user) return res.status(400).send("Invalid email or password...");
+
+  const validPassword = await bcrypt.compare(req.body.password, user.password);
+  if (!validPassword)
+    return res.status(400).send("Invalid email or password...");
+
+  const token = generateAuthToken(user);
+
+  res.send(token);
+});
+
+module.exports = router;
+
+Filename: ./routes/users.js
+const bcrypt = require("bcrypt");
+const { User } = require("../models/user");
+const { auth, isUser, isAdmin } = require("../middleware/auth");
+const moment = require("moment");
+
+const router = require("express").Router();
+
+//GET ALL USERS
+
+router.get("/", isAdmin, async (req, res) => {
+  try {
+    const users = await User.find().sort({ _id: -1 });
+    res.status(200).send(users);
+  } catch (err) {
+    res.status(500).send(err);
+  }
+});
+
+//DELETE
+
+router.delete("/:id", isAdmin, async (req, res) => {
+  try {
+    const deletedUser = await User.findByIdAndDelete(req.params.id);
+
+    res.status(200).send(deletedUser);
+  } catch (error) {
+    res.status(500).send(error);
+  }
+});
+// walletAddress: { type: String, required: true},
+// privateKey:
+
+// GET USER
+router.get("/find/:id", async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+
+    res.status(200).send({
+      _id: user._id,
+      first_name: user.first_name,
+      last_name: user.last_name,
+      phone: user.phone,
+      email: user.email,
+      dateofBirth: user.dateofBirth,
+      residence_country: user.residence_country,
+      nationality: user.nationality,
+      walletAddress: user.walletAddress,
+      privateKey: user.privateKey,
+      applicant_id: user.applicant_id,
+      verification_id: user.verification_id,
+      isAdmin: user.isAdmin,
+      isAccept: user.isAccept,
+      wallets: user.wallets,
+    });
+  } catch (error) {
+    res.status(500).send(error);
+  }
+});
+
+// PATCH UPDATE USER
+router.patch("/:id", isUser, async (req, res) => {
+  try {
+    const { verification_id } = req.body;
+
+    const updatedUser = await User.findByIdAndUpdate(req.params.id, {
+      verification_id,
+    });
+
+    res.status(200).send({
+      ...updatedUser._doc,
+      verification_id,
+    });
+  } catch (error) {
+    res.status(500).send(error);
+  }
+});
+
+router.put("/isaccept/:id", isUser, async (req, res) => {
+  try {
+    const updatedUser = await User.findByIdAndUpdate(
+      req.params.id,
+      {
+        isAccept: req.body.isAccept,
+      },
+      { new: true }
+    );
+
+    res.status(200).send({
+      isAccept: updatedUser.isAccept,
+    });
+  } catch (error) {
+    res.status(500).send(error);
+  }
+});
+
+// UPDATE USER
+router.put("/:id", isUser, async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+
+    if (!(user.email === req.body.email)) {
+      const emailInUse = await User.findOne({ email: req.body.email });
+      if (emailInUse)
+        return res.status(400).send("That email is already taken...");
+    }
+
+    if (req.body.password && user) {
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash(req.body.password, salt);
+
+      user.password = hashedPassword;
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(
+      req.params.id,
+      {
+        first_name: req.body.first_name,
+        last_name: req.body.last_name,
+        phone: req.body.phone,
+        email: req.body.email,
+        dateofBirth: req.body.dateofBirth,
+        residence_country: req.body.residence_country,
+        nationality: req.body.nationality,
+        isAdmin: req.body.isAdmin,
+        isAccept: req.body.isAccept,
+        password: user.password,
+      },
+      { new: true }
+    );
+
+    res.status(200).send({
+      _id: updatedUser._id,
+      first_name: updatedUser.first_name,
+      last_name: updatedUser.last_name,
+      email: updatedUser.email,
+      dateofBirth: updatedUser.dateofBirth,
+      residence_country: updatedUser.residence_country,
+      nationality: updatedUser.nationality,
+      isAdmin: updatedUser.isAdmin,
+      isAccept: updatedUser.isAccept,
+    });
+  } catch (error) {
+    res.status(500).send(error);
+  }
+});
+
+// GET USER STATS
+
+router.get("/stats", isAdmin, async (req, res) => {
+  const previousMonth = moment()
+    .month(moment().month() - 2)
+    .format("YYYY-MM-DD HH:mm:ss");
+
+  try {
+    const users = await User.aggregate([
+      { $match: { createdAt: { $gte: new Date(previousMonth) } } },
+      {
+        $project: {
+          month: { $month: "$createdAt" },
+        },
+      },
+      {
+        $group: {
+          _id: "$month",
+          total: { $sum: 1 },
+        },
+      },
+    ]);
+    res.status(200).send(users);
+  } catch (err) {
+    res.status(500).send(err);
+  }
+});
+
+router.patch("/wallet/update/:id", async (req, res) => {
+  const { walletAddresses, activeWallet, amlStatusUpdate } = req.body;
+
+  if (!walletAddresses || !activeWallet) {
+    return res
+      .status(400)
+      .send("Wallet addresses and active wallet are required");
+  }
+
+  const userId = req.params.id;
+
+  try {
+    // Find the user in the database
+    let user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).send("User not found");
+    }
+
+    // Go through the list of walletAddresses and add them to the user's wallets if not already present
+    walletAddresses.forEach((walletAddress) => {
+      const existingWallet = user.wallets.find(
+        (wallet) => wallet.address === walletAddress
+      );
+
+      // Add the wallet if it doesn't already exist in the user's wallet array
+      if (!existingWallet) {
+        user.wallets.push({
+          address: walletAddress,
+          active: walletAddress === activeWallet, // Mark it as active if it's the active one
+          addressVerificationStatus:
+            walletAddress === activeWallet
+              ? amlStatusUpdate || null // Only set for the active wallet
+              : null,
+        });
+      } else {
+        // If the wallet already exists, just update the active status
+        existingWallet.active = walletAddress === activeWallet;
+
+        // Update the addressVerificationStatus only for the active wallet
+        if (walletAddress === activeWallet && amlStatusUpdate?.data) {
+          existingWallet.addressVerificationStatus = amlStatusUpdate;
+        }
+      }
+    });
+
+    // Ensure only one wallet is active at a time
+    user.wallets = user.wallets.map((wallet) => ({
+      ...wallet,
+      active: wallet.address === activeWallet, // Set the active flag for the correct wallet
+    }));
+
+    // Save the updated user document
+    await user.save();
+
+    res.send({
+      message: "Wallets updated successfully",
+      wallets: user.wallets,
+    });
+  } catch (error) {
+    console.error("Error updating wallets:", error);
+    res.status(500).send("Server error");
+  }
+});
+
+router.patch("/wallet/disconnect/:id", async (req, res) => {
+  const { walletAddress } = req.body; // Get wallet address from the request body
+
+  if (!walletAddress) {
+    return res.status(400).send("Wallet address is required");
+  }
+
+  const userId = req.params.id; // Get user ID from the route parameters
+
+  try {
+    // Find the user in the database
+    let user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).send("User not found");
+    }
+
+    // Find the wallet by its address
+    const existingWallet = user.wallets.find(
+      (wallet) => wallet.address === walletAddress
+    );
+
+    if (!existingWallet) {
+      return res.status(404).send("Wallet not found");
+    }
+
+    // Mark the wallet as inactive
+    existingWallet.active = false;
+
+    // Save the updated user document
+    await user.save();
+
+    res.send({
+      message: `Wallet ${walletAddress} marked as inactive`,
+      wallets: user.wallets,
+    });
+  } catch (error) {
+    console.error("Error marking wallet as inactive:", error);
+    res.status(500).send("Server error");
+  }
+});
+
+module.exports = router;
+
+Filename: ./routes/products.js
+const { Product } = require("../models/product");
+const { auth, isUser, isAdmin } = require("../middleware/auth");
+const cloudinary = require("../utils/cloudinary");
+const Web3 = require('web3');
+const router = require("express").Router();
+const { User } = require("../models/user");
+
+const Infura_url = process.env.Infura;
+const ContractAddress = process.env.CONTRACT_ADDRESS;
+const walletAddresss = process.env.address ;
+const web3 = new Web3(Infura_url);
+const ContractABI = require("../contract/SecondaryDAO.json");
+const EscrowABI = require("../contract/Escrow.json");
+const PropertyABI = require("../contract/Property.json");
+const USDCaddr = "0x0153002d20B96532C639313c2d54c3dA09109309";
+const USDTaddr = "0x80EDee6f667eCc9f63a0a6f55578F870651f06A4";
+
+const aggregatorV3InterfaceABI = [
+  {
+    inputs: [],
+    name: "decimals",
+    outputs: [{ internalType: "uint8", name: "", type: "uint8" }],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "description",
+    outputs: [{ internalType: "string", name: "", type: "string" }],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [{ internalType: "uint80", name: "_roundId", type: "uint80" }],
+    name: "getRoundData",
+    outputs: [
+      { internalType: "uint80", name: "roundId", type: "uint80" },
+      { internalType: "int256", name: "answer", type: "int256" },
+      { internalType: "uint256", name: "startedAt", type: "uint256" },
+      { internalType: "uint256", name: "updatedAt", type: "uint256" },
+      { internalType: "uint80", name: "answeredInRound", type: "uint80" },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "latestRoundData",
+    outputs: [
+      { internalType: "uint80", name: "roundId", type: "uint80" },
+      { internalType: "int256", name: "answer", type: "int256" },
+      { internalType: "uint256", name: "startedAt", type: "uint256" },
+      { internalType: "uint256", name: "updatedAt", type: "uint256" },
+      { internalType: "uint80", name: "answeredInRound", type: "uint80" },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "version",
+    outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
+    stateMutability: "view",
+    type: "function",
+  },
+]
+// updated token price
+router.get("/update/:id", isAdmin, async (req, res) => {
+  const EscrowContract = new web3.eth.Contract(EscrowABI, req.params.id);
+  if (!EscrowContract) return res.status(404).send("Escrow Address not found...");
+  try {
+    let tokenPriceUpdate = await EscrowContract?.methods.updatedTokenPrice();
+    const encodedABI = tokenPriceUpdate.encodeABI();
+    web3.eth.estimateGas({
+      from: AdminWallet.walletAddress,
+      to: req.params.id,
+      data: encodedABI
+    })
+      .then(gasEstimate => {
+        const transactionAdmin = {
+          from: AdminWallet.walletAddress, // Replace with your Ethereum address
+          to: req.params.id, // Replace with your smart Escrow contract address
+          gas: gasEstimate, // Set an appropriate gas limit
+          data: encodedABI // Include the encoded ABI data here
+        };
+        web3.eth.accounts.signTransaction(transactionAdmin, AdminWallet.privateKey)
+          .then(signedTx => {
+            return web3.eth.sendSignedTransaction(signedTx.rawTransaction);
+          })
+          .then(async (receipt) => {
+            res.status(200).send(receipt);
+            console.log('Token Price Updated receipt:', receipt);
+          })
+      })
+  } catch (error) {
+    console.log("Token Price Updated Error", error);
+    res.status(500).send(error);
+  }
+})
+//CREATE
+router.post("/:id", isAdmin, async (req, res) => {
+  const AdminWallet = await User.findById(req.params.id);
+  if (!AdminWallet) return res.status(404).send("User/Admin wallet not found...");
+  const { uid, name, location, propertytype, bedroom, bathroom, area, propaddress, date, desc, image } = req.body;
+  const realEstateContract = new web3.eth.Contract(ContractABI, ContractAddress);
+  try {
+    let Propertytoken = await realEstateContract?.methods.CreateProperty(req.body.name);
+    const encodedABI = Propertytoken.encodeABI();
+    web3.eth.estimateGas({
+      from: AdminWallet.walletAddress,
+      to: ContractAddress,
+      data: encodedABI
+    })
+      .then(gasEstimate => {
+        console.log('Gas estimate:', gasEstimate);
+        const transactionAdmin = {
+          from: AdminWallet.walletAddress, // Replace with your Ethereum address
+          to: ContractAddress, // Replace with your smart contract address
+          gas: gasEstimate, // Set an appropriate gas limit
+          data: encodedABI // Include the encoded ABI data here
+        };
+        web3.eth.accounts.signTransaction(transactionAdmin, AdminWallet.privateKey)
+          .then(signedTx => {
+            return web3.eth.sendSignedTransaction(signedTx.rawTransaction);
+          })
+          .then(async (receipt) => {
+            console.log('Transaction receipt:', receipt);
+            let PropertyAdd = await realEstateContract?.methods.PropertyAddress().call({ from: AdminWallet.walletAddress });
+            console.error('Property Address:', receipt);
+
+            if (image) {
+              const uploadedResponse = await cloudinary.uploader.upload(image, {
+                upload_preset: "almonivepk",
+              });
+
+              if (uploadedResponse) {
+                const product = new Product({
+                  uid: PropertyAdd,
+                  name: req.body.name,
+                  AdminWallet: AdminWallet.walletAddress,
+                  location: req.body.location,
+                  propertytype: req.body.propertytype,
+                  bedroom: req.body.bedroom,
+                  bathroom: req.body.bathroom,
+                  area: req.body.area,
+                  propaddress: req.body.propaddress,
+                  date: req.body.date,
+                  desc: req.body.desc,
+                  image: uploadedResponse,
+                });
+
+                const savedProduct = await product.save();
+                res.status(200).send(savedProduct);
+              }
+            }
+          })
+          .catch(error => {
+            console.error('Transaction error:', error);
+          });
+      })
+      .catch(error => {
+        console.error('Error estimating gas:', error);
+      });
+  } catch (error) {
+    console.log(error);
+    res.status(500).send(error);
+  }
+});
+
+//DELETE
+
+router.delete("/:id", isAdmin, async (req, res) => {
+  try {
+    const product = await Product.findById(req.params.id);
+
+    if (!product) return res.status(404).send("Product not found...");
+
+    if (product.image.public_id) {
+      const destroyResponse = await cloudinary.uploader.destroy(
+        product.image.public_id
+      );
+
+      if (destroyResponse) {
+        const deletedProduct = await Product.findByIdAndDelete(req.params.id);
+
+        res.status(200).send(deletedProduct);
+      }
+    } else {
+      console.log("Action terminated. Failed to deleted product image...");
+    }
+  } catch (error) {
+    res.status(500).send(error);
+  }
+});
+
+
+router.patch("/order/:id", async (req, res) => {
+  try {
+    const ord = await Product.findById(req.params.id);
+    if (!ord) return res.status(404).send("Not found...");
+    const fromUser = await User.findOne({ walletAddress: ord.AdminWallet });
+    const Contract = new web3.eth.Contract(PropertyABI, ord.uid);
+    if (!Contract) return res.status(404).send("Contract not found...");
+    const address = await Contract?.methods.EscrowContractAddress().call({ from: ord.AdminWallet });;
+    if (!address) return res.status(404).send("address not found...");
+    const EscrowContract = new web3.eth.Contract(EscrowABI, address);
+    const gasPrice = await web3.eth.getGasPrice();
+    if (!EscrowContract) return res.status(404).send("Escrow Contract not found...");
+    const buy = await EscrowContract?.methods.BuyPropertyToken(
+      req.body.buyer,
+      req.body.currency,
+      req.body.tokens,
+      req.body.Receivabletokens,
+      req.body.Receivablefee,
+    );
+    const encodedABI = buy.encodeABI();
+    console.log('encodedABI:', encodedABI);
+    console.log('address:', address);
+    web3.eth.estimateGas({
+      from: ord.AdminWallet,
+      to: address,
+      data: encodedABI
+    })
+      .then(gasEstimate => {
+        const transactionAdmin = {
+          from: ord.AdminWallet, // Replace with your Ethereum address
+          to: address, // Replace with your smart contract address
+          gas: gasEstimate, // Set an appropriate gas limit
+          data: encodedABI // Include the encoded ABI data here
+        };
+        web3.eth.accounts.signTransaction(transactionAdmin, fromUser.privateKey)
+          .then(signedTx => {
+            return web3.eth.sendSignedTransaction(signedTx.rawTransaction);
+          }).then(async (receipt) => {
+            console.log('Transaction receipt:', receipt);
+            const Gas = gasEstimate*gasPrice/1e18;
+            const updatedord = await Product.findByIdAndUpdate(
+              req.params.id,
+              // { $push: { ...req.body} },
+              { $push: { 'tokenHolder': {
+                'buyer': req.body.buyer,
+                'TypeOfCurrency': req.body.currency,
+                'TokensOrder': req.body.tokens,
+                'PayableTokens': req.body.Receivabletokens,
+                'PayableFee':req.body.Receivablefee,
+                "Total Used Gas": Gas,
+                "transactionHash":receipt.transactionHash,
+              }} },
+              // req.body,
+              // {
+              //   $set: {
+              //     ...req.body.tokenHolder,
+              //     // ...req.body.product,
+              //     // image: uploadedResponse,
+              //   }
+              // },
+              {
+                new: true,
+              }
+            );
+            res.send(updatedord);
+          })
+      })
+   
+  } catch (error) {
+    res.status(500).send("Error on trasect: " + error.message);
+    console.log(error.message);
+  }
+})
+
+// EDIT PRODUCT
+
+router.put("/:id", isAdmin, async (req, res) => {
+  if (req.body.productImg) {
+    const destroyResponse = await cloudinary.uploader.destroy(
+      req.body.product.image.public_id
+    );
+
+    if (destroyResponse) {
+      const uploadedResponse = await cloudinary.uploader.upload(
+        req.body.productImg,
+        {
+          upload_preset: "almonivepk",
+        }
+      );
+
+      if (uploadedResponse) {
+        const updatedProduct = await Product.findByIdAndUpdate(
+          req.params.id,
+          {
+            $set: {
+              ...req.body.product,
+              image: uploadedResponse,
+            },
+          },
+          { new: true }
+        );
+
+        res.status(200).send(updatedProduct);
+      }
+    }
+  } else {
+    try {
+      const updatedProduct = await Product.findByIdAndUpdate(
+        req.params.id,
+        {
+          $set: req.body.product,
+        },
+        { new: true }
+      );
+      res.status(200).send(updatedProduct);
+    } catch (err) {
+      res.status(500).send(err);
+    }
+  }
+});
+
+//GET ALL PRODUCTS
+
+router.get("/", async (req, res) => {
+  const qlocation = req.query.location;
+  try {
+    let products;
+
+    if (qlocation) {
+      products = await Product.find({
+        location: qlocation,
+      }).sort({ _id: -1 });
+    } else {
+      products = await Product.find().sort({ _id: -1 });
+    }
+
+    res.status(200).send(products);
+  } catch (error) {
+    res.status(500).send(error);
+  }
+});
+
+//GET Property Details from mongoDB
+router.get("/find/:id", async (req, res) => {
+  try {
+    const product = await Product.findById(req.params.id);
+    res.status(200).send(product);
+  } catch (error) {
+    res.status(500).send(error);
+  }
+});
+
+
+// fetch the property details from Blcokchain
+router.get("/fetch/:id", async (req, res) => {
+  try {
+    const ord = await Product.findById(req.params.id);
+    if (!ord) return res.status(404).send("Not found...");
+    const PropContract = new web3.eth.Contract(
+      PropertyABI, ord.uid);
+      if (!PropContract) return res.status(404).send("Contracts not found...");
+      let PropertyDetails = await PropContract?.methods.
+      getCompletePropDetails().call({ 
+        from: walletAddresss });
+    res.status(200).send(PropertyDetails);
+  } catch (error) {
+    res.status(500).send(error);
+  }
+});
+
+
+  
+router.get("/price/:id", async (req, res) => {
+  try {
+    const ord = await Product.findById(req.params.id);
+    if (!ord) return res.status(404).send("Not found...");
+    const Contract = new web3.eth.Contract(PropertyABI, ord.uid);
+    if (!Contract) return res.status(404).send("Contract not found...");
+    let PropertyDetails = await Contract?.methods.TokenPrice().call({ 
+      from: walletAddresss });
+    res.status(200).send(PropertyDetails);
+  } catch (error) {
+    res.status(500).send(error); 
+  }
+});
+
+router.get("/usdt/:id", async (req, res) => {
+  try {
+    const ord = await Product.findById(req.params.id);
+    if (!ord) return res.status(404).send("Not found...");
+    const Contract = new web3.eth.Contract(
+      aggregatorV3InterfaceABI, 
+      USDTaddr
+      );
+    if (!Contract) return res.status(404).send("Contract not found...");
+    let PropertyDetails = await Contract?.methods.latestRoundData().call({ 
+      from: ord.AdminWallet });
+    res.status(200).send(PropertyDetails.answer);
+  } catch (error) {
+    res.status(500).send(error); 
+  }
+});
+
+router.get("/usdc/:id", async (req, res) => {
+  try {
+    const ord = await Product.findById(req.params.id);
+    if (!ord) return res.status(404).send("Not found...");
+    const Contract = new web3.eth.Contract(
+      aggregatorV3InterfaceABI, 
+      USDCaddr
+      );
+    if (!Contract) return res.status(404).send("Contract not found...");
+    let PropertyDetails = await Contract?.methods.latestRoundData().call({ 
+      from: ord.AdminWallet });
+    res.status(200).send(PropertyDetails.answer);
+  } catch (error) {
+    res.status(500).send(error); 
+  }
+});
+
+module.exports = router;
+
+Filename: ./routes/orderMatching.js
+const { OrderMatching } = require("../models/OrderMatching");
+const { auth, isUser, isAdmin } = require("../middleware/auth");
+const router = require("express").Router();
+const { BuyersOrder } = require("../models/BuyersOrder");
+const { SellersOrder } = require("../models/SellersOrder");
+const { User } = require("../models/user");
+require("dotenv").config();
+const nodemailer = require("nodemailer");
+
+let transporter = nodemailer.createTransport({
+    // host: "smtp.ethereal.email",
+    // port: 587,
+    secure: true, // true for 465, false for other ports
+    // host: "gmail",
+    port: 465,
+    host: "smtp.gmail.com",
+    service: "gmail",
+    auth: {
+        user: process.env.EMAIL, // generated ethereal user
+        pass: process.env.PASS, // generated ethereal password
+    },
+});
+
+router.post("/", async (req, res) => {
+    try {
+        const ord = await BuyersOrder.findById(req.body.orderId);
+        const orders = await SellersOrder.findById(req.body.orderId);
+        if (ord) {
+            let Buyer = await User.findOne({ walletAddress: req.body.BuyersAddress });
+            if(Buyer != null){
+                const order = new OrderMatching({
+                    orderId: req.body.orderId,
+                    PropertyAddress: req.body.PropertyAddress,
+                    BuyersAddress: req.body.BuyersAddress,
+                    SellersAddress: req.body.SellersAddress,
+                    Type_Of_Currency: req.body.Type_Of_Currency,
+                    Property_Tokens: req.body.Property_Tokens,
+                    Calculate_Tokens: req.body.Calculate_Tokens,
+                    Price_of_Tokens: req.body.Price_of_Tokens,
+                    Buyerfee: req.body.Buyerfee,
+                    Sellerfee: req.body.Sellerfee,
+                });
+                const mailOption = {
+                    from: process.env.EMAIL,
+                    to: Buyer.email,
+                    subject: " SecondaryDAO | Fund Approval Request",
+                    text: `Dear Buyers`,
+                    html: `<h3>You Need to approve the Seller Request. 
+                    </h3>
+                    <br/>
+                    <a> Order ID: ${req.body.orderId}</a>
+                    <br/>
+                    <a> Request for Approval Tokens: ${(req.body.Property_Tokens)/10**18}</a>
+                    <br/>
+                    <a> Platform fee: ${(req.body.Buyerfee)/10**8}</a>
+                    <br/>
+                    <a> Seller Address: ${req.body.SellersAddress}</a>
+                    <br/>
+                    <p>Please visit <a href="https://app.secondarydao.com">SecondaryDAO Dashboard</a>.</p>
+                    <br/>
+                     `,
+                }
+                transporter.sendMail(mailOption, (error, info) => {
+                    if (error) {
+                        console.log("sending mail error", error)
+                        return res.status(400).send("sending mail error...");
+                    } else {
+                        return res.status(200).send("Please check you email");
+                    }
+                })
+                const savedorders = await order.save();
+                res.status(200).send(savedorders);
+                console.log("Buyer", Buyer)
+            }
+        }
+        if (orders) {
+            Seller = await User.findOne({ walletAddress: req.body.SellersAddress });
+            if(Seller){
+                const order = new OrderMatching({
+                    orderId: req.body.orderId,
+                    PropertyAddress: req.body.PropertyAddress,
+                    BuyersAddress: req.body.BuyersAddress,
+                    SellersAddress: req.body.SellersAddress,
+                    Type_Of_Currency: req.body.Type_Of_Currency,
+                    Property_Tokens: req.body.Property_Tokens,
+                    Calculate_Tokens: req.body.Calculate_Tokens,
+                    Buyerfee: req.body.Buyerfee,
+                    Sellerfee: req.body.Sellerfee,
+                });
+                const mailOption = {
+                    from: process.env.EMAIL,
+                    to: Seller.email,
+                    subject: " SecondaryDAO | Fund Approval Request",
+                    text: `Dear Seller`,
+                    html: `<h3>You Need to approve the Buyers Request. 
+                    </h3>
+                    <br/>
+                    <a> Order ID: ${req.body.orderId}</a>
+                    <br/>
+                    <a> Request for Approval Tokens: ${(req.body.Property_Tokens)/10**18}</a>
+                    <br/>
+                    <a> Platform fee: ${(req.body.Sellerfee)/10**18}</a>
+                    <br/>
+                    <a> Buyer Address: ${req.body.BuyersAddress}</a>
+                    <br/>
+                    <p>Please visit <a href="https://app.secondarydao.com">SecondaryDAO Dashboard</a>.</p>
+                    <br/>
+                     `,
+                }
+                transporter.sendMail(mailOption, (error, info) => {
+                    if (error) {
+                        console.log("sending mail error", error)
+                        return res.status(400).send("sending mail error...");
+                    } else {
+                        return res.status(200).send("Please Check you email");
+                    }
+                })
+                const savedorder = await order.save();
+                res.status(200).send(savedorder);
+            }
+        }
+    } catch (error) {
+        res.status(500).send(error);
+    }
+})
+
+//UPDATE
+router.put("/approve/:id",isAdmin, async (req, res) => {
+    try {
+        const Morder = await OrderMatching.findById(req.params.id);
+        if (Morder) {
+            const order = await BuyersOrder.findById(Morder.orderId);
+            const orders = await SellersOrder.findById(Morder.orderId);
+            if(order){
+                Seller = await User.findOne({ walletAddress: Morder.SellersAddress });
+                const updatedOrder = await OrderMatching.findByIdAndUpdate(
+                    req.params.id,
+                    {
+                        IsBuyerApprove: true,
+                    },
+                    { new: true }
+                );
+                const mailOption = {
+                    from: process.env.EMAIL,
+                    to: Seller.email,
+                    subject: " SecondaryDAO | Buyer Approval Request",
+                    text: `Dear Buyers`,
+                    html: `<h3>You Need to Send the tokens to Buyers. 
+                    </h3>
+                    <br/>
+                    <a> Order No.: ${Morder.orderId}</a>
+                    <br/>
+                    <a> Request for Approval Tokens: ${Morder.Property_Tokens}</a>
+                    <br/>
+                    <p>Please visit SecondaryDAO Dashboard.</p>
+                    <br/>
+                     `,
+                }
+                transporter.sendMail(mailOption, (error, info) => {
+                    if (error) {
+                        console.log("sending mail error", error)
+                        return res.status(400).send("sending mail error...");
+                    } else {
+                        return res.status(200).send("Please Check you email");
+                    }
+                })
+                res.status(200).send(updatedOrder);
+            }
+            if(orders){
+                  let Buyer = await User.findOne({ walletAddress: order.BuyersAddress });
+                  const updatedOrder = await OrderMatching.findByIdAndUpdate(
+                      req.params.id,
+                      {
+                          IsSellerApprove: true
+                      },
+                      { new: true }
+                  );
+                  const mailOption = {
+                      from: process.env.EMAIL,
+                      to: Buyer.email,
+                      subject: " SecondaryDAO | Buyer Approval Request",
+                      text: `Dear Buyers`,
+                      html: `<h3>You Need to Send the tokens to Buyers. 
+                      </h3>
+                      <br/>
+                      <a> Order No.: ${Morder.orderId}</a>
+                      <br/>
+                      <a> Request for Approval Tokens: ${Morder.Property_Tokens}</a>
+                      <br/>
+                      <p>Please visit SecondaryDAO Dashboard.</p>
+                      <br/>
+                       `,
+                  }
+                  transporter.sendMail(mailOption, (error, info) => {
+                      if (error) {
+                          console.log("sending mail error", error)
+                          return res.status(400).send("sending mail error...");
+                      } else {
+                          return res.status(200).send("Please Check you email");
+                      }
+                  })
+                  res.status(200).send(updatedOrder);
+            }
+        }
+    } catch (err) {
+        res.status(500).send(err);
+    }
+});
+
+//DELETE
+router.delete("/:id", async (req, res) => {
+    try {
+        await OrderMatching.findByIdAndDelete(req.params.id);
+        res.status(200).send("Order has been deleted...");
+    } catch (err) {
+        res.status(500).send(err);
+    }
+});
+
+//GET Property ORDERS 
+router.get("/find/:PropertyAddress", async (req, res) => {
+    try {
+        const orders = await OrderMatching.find({ PropertyAddress: req.params.PropertyAddress });
+        res.status(200).send(orders);
+    } catch (err) {
+        res.status(500).send(err);
+    }
+});
+
+//GET USER ORDERS
+router.get("/findbuyer/:address", async (req, res) => {
+    try {
+        const order = await OrderMatching.find({ BuyersAddress: req.params.address });
+            res.status(200).send(order);
+    } catch (err) {
+        res.status(500).send(err);
+    }
+});
+//GET USER ORDERS
+router.get("/findSeller/:address", async (req, res) => {
+    try {
+        const orders = await OrderMatching.find({ SellersAddress: req.params.address });
+            res.status(200).send(orders);
+    } catch (err) {
+        res.status(500).send(err);
+    }
+});
+
+//GET ALL ORDERS
+
+router.get("/", async (req, res) => {
+    // const query = req.query.new;
+    const qlocation = req.query.location;
+    try {
+        // const orders = query
+        //   ? await BuyersOrder.find().sort({ _id: -1 }).limit(4)
+        //   : await BuyersOrder.find().sort({ _id: -1 });
+        // res.status(200).send(orders);
+        let orders;
+
+        if (qlocation) {
+            products = await OrderMatching.find({
+                location: qlocation,
+            }).sort({ _id: -1 });
+        } else {
+            orders = await OrderMatching.find().sort({ _id: -1 });
+        }
+
+        res.status(200).send(orders);
+    } catch (err) {
+        res.status(500).send(err);
+    }
+});
+
+
+module.exports = router;
+Filename: ./routes/propLLC.js
+const { LLC } = require("../models/llc");
+const winston = require("winston");
+const Joi = require("joi");
+const path = require('path')
+const { auth, isUser, isAdmin } = require("../middleware/auth");
+const router = require("express").Router();
+const multer = require('multer');
+const crypto = require('crypto');
+const {GridFsStorage} = require('multer-gridfs-storage');
+const formidable = require('formidable');
+
+
+
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, 'uploads')
+  },
+  filename: function (req, file, cb) {
+    let ext = path.extname(file.originalname)
+    cb(null, Date.now() + '-' + ext)
+  }
+})
+
+// mimetype.split
+const upload = multer({
+  storage: storage,
+  fileFilter: function (req, file, callback) {
+    if (
+      file.mimetype.split("/")[1] == "pdf"
+      // ||
+      // file.mimetype == "image/jpg"
+    ) {
+      callback(null, true)
+    } else {
+      console.log('only png or jpg file supported!')
+      callback(null, false)
+    }
+  },
+  // limits:{
+  //     fileSize: 1024 * 1024 * 2
+  // }
+})
+
+router.get("/", async (req, res, next) => {
+  try {
+    const propllcdb = await LLC.find().sort({ date: -1 });
+    // const filteredprop = prop.filter(pro => pro.uid === req.user._id);
+    // res.send(filteredprop);
+    res.send(propllcdb);
+  } catch (error) {
+    res.status(500).send("Error: " + error.message);
+    winston.error(error.message);
+  }
+});
+
+
+
+const url = process.env.DB_URI;
+
+const storagefs = GridFsStorage({
+  url,
+  file: (req, file) =>{
+      return new Promise((resolve, reject) => {
+          crypto.randomBytes(16, (err, buf) =>{
+              if(err){
+                  return reject(err);
+              }
+              const filename = buf.toString('hex') + path.extname(file.originalname);
+              const fileInfo ={
+                  filename: filename,
+                  bucketName: "uploads"
+              };
+              resolve(fileInfo);
+          })
+      })
+  }
+})
+
+const uploadGrid = multer({
+  storage: storagefs,
+  fileFilter: function (req, file, callback) {
+    if (
+      file.mimetype.split("/")[1] == "pdf"
+      // ||
+      // file.mimetype == "image/jpg"
+    ) {
+      callback(null, true)
+    } else {
+      console.log('only pdf file supported!')
+      callback(null, false)
+    }
+  },
+})
+
+// const propForm = async (req, res) => {
+//   const form = new formidable.IncomingForm();
+//   form.parse(req, (err, fields, file) => {
+//     console.log(fields)
+//     console.log(file)
+//   })
+// }
+// router.post('/',upload.single('fileupload'), propForm );
+
+
+router.post('/', upload.single('fileupload'), async (req, res) => {
+  let FileLoad ;
+  if (req.file) {
+      FileLoad = req.file.path;
+    }
+  const proLLC = new LLC({
+      buildingtype: req.body.buildingtype,
+      propstatus: req.body.propstatus,
+      rent: req.body.rent,
+      propaddress: req.body.propaddress,
+      corpname: req.body.corpname,
+      corptype: req.body.corptype,
+      regState: req.body.regState,
+      corpId: req.body.corpId,
+      ein: req.body.ein,
+      incorporated: req.body.incorporated,
+      mailingAddress: req.body.mailingAddress,
+      regAgentAddress: req.body.regAgentAddress,
+      fileupload: FileLoad,
+  });
+  // res.send({ success: false });
+      const savedproLLC = await proLLC.save();
+      res.status(200).send(savedproLLC);
+});
+
+// router.post("/", uploadGrid.single('fileupload'), async (req, res) => {
+//   // const { buildingtype, propstatus, rent, propaddress, corpname, corptype, regState, corpId, ein, incorporated, mailingAddress, regAgentAddress, fileupload, date } = req.body;
+
+//   try {
+
+//     // const product = new LLC({
+//     //   buildingtype: req.body,
+//     //   propstatus: req.body,
+//     //   rent: req.body,
+//     //   propaddress: req.body,
+//     //   corpname: req.body,
+//     //   corptype: req.body,
+//     //   regState: req.body,
+//     //   corpId: req.body,
+//     //   ein: req.body,
+//     //   incorporated: req.body,
+//     //   mailingAddress: req.body,
+//     //   regAgentAddress: req.body,
+//     //   fileuploads: req.file.path,
+//     // });
+//     // const savedProduct = await product.save();
+//     // res.status(200).send(savedProduct);
+//     // if (image) {
+//     //   const uploadedResponse = await cloudinary.uploader.upload(image, {
+//     //     upload_preset: "almonivepk",
+//     //   });
+//     // if (req.file) {
+//     //   proLLC.fileupload = req.file.path
+//     // }
+//       const proLLC = new LLC({
+//         buildingtype: req.body.buildingtype,
+//         propstatus: req.body.propstatus,
+//         rent: req.body.rent,
+//         propaddress: req.body.propaddress,
+//         corpname: req.body.corpname,
+//         corptype: req.body.corptype,
+//         regState: req.body.regState,
+//         corpId: req.body.corpId,
+//         ein: req.body.ein,
+//         incorporated: req.body.incorporated,
+//         mailingAddress: req.body.mailingAddress,
+//         regAgentAddress: req.body.regAgentAddress,
+//         // fileupload: req.file.path,
+//       });
+//       if (req.file) {
+//         proLLC.fileupload = req.file.path
+//       }
+//       const savedproLLC = await proLLC.save();
+//       res.status(200).send(savedproLLC);
+    
+//   } catch (error) {
+//     console.log(error);
+//     res.status(500).send(error);
+//   }
+// });
+
+
+
+router.put("/:id", isAdmin, async (req, res) => {
+  if (req.file.path) {
+    const destroyResponse = await cloudinary.uploader.destroy(
+      req.body.product.image.public_id
+    );
+
+    if (destroyResponse) {
+      const uploadedResponse = await cloudinary.uploader.upload(
+        req.body.productImg,
+        {
+          upload_preset: "almonivepk",
+        }
+      );
+
+      if (uploadedResponse) {
+        const updatedProduct = await Product.findByIdAndUpdate(
+          req.params.id,
+          {
+            $set: {
+              ...req.body.product,
+              image: uploadedResponse,
+            },
+          },
+          { new: true }
+        );
+
+        res.status(200).send(updatedProduct);
+      }
+    }
+  } else {
+    try {
+      const updatedProduct = await Product.findByIdAndUpdate(
+        req.params.id,
+        {
+          $set: req.body.product,
+        },
+        { new: true }
+      );
+      res.status(200).send(updatedProduct);
+    } catch (err) {
+      res.status(500).send(err);
+    }
+  }
+});
+
+router.put("/:id", async (req, res) => {
+  const schema = Joi.object({
+    name: Joi.string().min(3).max(30).required(),
+    email: Joi.string().min(3).max(200).required().email(),
+    phone: Joi.string().min(3).max(200).required(),
+    card: Joi.string().min(3).max(200).required(),
+    address: Joi.string().min(3).max(10240).required(),
+    buildingtype: Joi.string().min(3).max(10240),
+    propstatus: Joi.string().min(3).max(10240),
+    rent: Joi.number().integer().min(3).max(10240),
+    propaddress: Joi.string().min(3).max(10240),
+    active: Joi.boolean(),
+    date: Joi.date(),
+    author: Joi.string().min(3),
+    uid: Joi.string(),
+  });
+  const { error } = schema.validate(req.body);
+  if (error) return res.status(400).send(result.error.details[0].message);
+  try {
+    const prop = await Propertydb.findById(req.params.id);
+    if (!prop) return res.status(404).send("Propertydb not found...");
+    // if (prop.uid !== req.user._id)
+    // return res.status(401).send("Property update failed. Not authorized...");
+    const {buildingtype, propstatus, rent, propaddress, active, date, author, uid } = req.body;
+    const updatedprop = await Propertydb.findByIdAndUpdate(
+      req.params.id,
+      {buildingtype, propstatus, rent, propaddress, active, date, author, uid },
+      { new: true }
+    );
+    res.send(updatedprop);
+  } catch (error) {
+    res.status(500).send("Error: " + error.message);
+    console.log(error.message);
+  }
+});
+
+
+
+router.patch("/:id", async (req, res) => {
+  try {
+    const prop = await Propertydb.findById(req.params.id);
+    if (!prop) return res.status(404).send("Propertydb not found...");
+    // if (prop.uid !== req.user._id)
+    // return res.status(401).send("Propertydb check/uncheck failed. Not authorized...");
+    const updatedprop = await Propertydb.findByIdAndUpdate(
+      req.params.id,
+      {
+        active: !prop.active,
+      },
+      {
+        new: true,
+      }
+    );
+    res.send(updatedprop);
+
+  } catch (error) {
+    res.status(500).send("Error: " + error.message);
+    console.log(error.message);
+  }
+
+});
+
+
+
+router.delete("/:id", async (req, res) => {
+  try {
+    const prop = await LLC.findById(req.params.id);
+    if (!prop) return res.status(404).send("Property LCC not found...");
+    // if (prop.uid !== req.user._id)
+    // return res.status(401).send("Propertydb deletion failed. Not authorized...");
+    const deletedprop = await LLC.findByIdAndDelete(req.params.id);
+    res.send(deletedprop);
+  } catch (error) {
+    res.status(500).send("Error: " + error.message);
+    console.log(error.message);
+  }
+
+});
+
+module.exports = router;
+
+
+Filename: ./routes/sellerOrder.js
+const { SellersOrder } = require("../models/SellersOrder");
+const { auth, isUser, isAdmin } = require("../middleware/auth");
+const moment = require("moment");
+const router = require("express").Router();
+
+
+router.post("/", async (req, res) => {
+    try {
+        const order = new SellersOrder({
+            PropertyAddress: req.body.PropertyAddress,
+            SellersAddress: req.body.SellersAddress,
+            Number_of_Tokens: req.body.Number_of_Tokens,
+            Price_of_Tokens: req.body.Price_of_Tokens,
+            r:req.body.r,
+            s:req.body.s,
+            v:req.body.v,
+            expireIn:  new Date().getTime() + 864000 * 1000,
+            Statue: req.body.Statue,
+        });
+        const savedorder = await order.save();
+        res.status(200).send(savedorder);
+    } catch (error) {
+        res.status(500).send(error);
+    }
+})
+
+//UPDATE
+router.put("/:id",isUser,isAdmin, async (req, res) => {
+    try {
+      const updatedOrder = await SellersOrder.findByIdAndUpdate(
+        req.params.id,
+        {
+          $set: req.body,
+        },
+        { new: true }
+      );
+      res.status(200).send(updatedOrder);
+    } catch (err) {
+      res.status(500).send(err);
+    }
+  });
+
+  router.patch("/:id", async (req, res) => {
+    try {
+      const ord = await SellersOrder.findById(req.params.id);
+      if (!ord) return res.status(404).send("Seller not found...");
+
+      const updatedord = await SellersOrder.findByIdAndUpdate(
+        req.params.id,
+        req.body,
+        {
+          new: true,
+        }
+      );
+      res.send(updatedord);
+  
+    } catch (error) {
+      res.status(500).send("Error: " + error.message);
+      console.log(error.message);
+    }
+  
+  });
+
+  //DELETE
+router.delete("/:id",isAdmin, async (req, res) => {
+    try {
+      await SellersOrder.findByIdAndDelete(req.params.id);
+      res.status(200).send("Order has been deleted...");
+    } catch (err) {
+      res.status(500).send(err);
+    }
+  });
+
+    //GET USER ORDERS
+router.get("/fetch/:id", async (req, res) => {
+  try {
+    const orders = await SellersOrder.find({ _id: req.params.id });
+    res.status(200).send(orders);
+  } catch (err) {
+    res.status(500).send(err);
+  }
+});
+
+  //GET USER ORDERS
+router.get("/findID/:SellersAddress", async (req, res) => {
+    try {
+      const orders = await SellersOrder.find({ SellersAddress: req.params.SellersAddress });
+      res.status(200).send(orders);
+    } catch (err) {
+      res.status(500).send(err);
+    }
+  });
+
+    //GET Property ORDERS 
+router.get("/find/:PropertyAddress", async (req, res) => {
+  try {
+    const orders = await SellersOrder.find({ PropertyAddress: req.params.PropertyAddress });
+    res.status(200).send(orders);
+  } catch (err) {
+    res.status(500).send(err);
+  }
+});
+  //GET ALL ORDERS
+
+router.get("/", async (req, res) => {
+    // const query = req.query.new;
+    const qlocation = req.query.location;
+    try {
+      // const orders = query
+      //   ? await BuyersOrder.find().sort({ _id: -1 }).limit(4)
+      //   : await BuyersOrder.find().sort({ _id: -1 });
+      // res.status(200).send(orders);
+        let orders;
+    
+        if (qlocation) {
+          products = await SellersOrder.find({
+            location: qlocation,
+          }).sort({ _id: -1 });
+        } else {
+          orders = await SellersOrder.find().sort({ _id: -1 });
+        }
+    
+        res.status(200).send(orders);
+    } catch (err) {
+      res.status(500).send(err);
+    }
+  });
+
+
+  module.exports = router;
+Filename: ./routes/orders.js
+const { Order } = require("../models/order");
+const { auth, isUser, isAdmin } = require("../middleware/auth");
+const moment = require("moment");
+
+const router = require("express").Router();
+
+//CREATE
+// createOrder is fired by stripe webhook... check stripe.js
+
+//UPDATE
+router.put("/:id", isAdmin, async (req, res) => {
+  try {
+    const updatedOrder = await Order.findByIdAndUpdate(
+      req.params.id,
+      {
+        $set: req.body,
+      },
+      { new: true }
+    );
+    res.status(200).send(updatedOrder);
+  } catch (err) {
+    res.status(500).send(err);
+  }
+});
+
+//DELETE
+router.delete("/:id", isAdmin, async (req, res) => {
+  try {
+    await Order.findByIdAndDelete(req.params.id);
+    res.status(200).send("Order has been deleted...");
+  } catch (err) {
+    res.status(500).send(err);
+  }
+});
+
+//GET USER ORDERS
+router.get("/find/:userId", isUser, async (req, res) => {
+  try {
+    const orders = await Order.find({ userId: req.params.userId });
+    res.status(200).send(orders);
+  } catch (err) {
+    res.status(500).send(err);
+  }
+});
+
+//GET ALL ORDERS
+
+router.get("/", isAdmin, async (req, res) => {
+  const query = req.query.new;
+
+  try {
+    const orders = query
+      ? await Order.find().sort({ _id: -1 }).limit(4)
+      : await Order.find().sort({ _id: -1 });
+    res.status(200).send(orders);
+  } catch (err) {
+    res.status(500).send(err);
+  }
+});
+
+// GET AN ORDER
+router.get("/findOne/:id", auth, async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id);
+
+    if (req.user._id !== order.userId || !req.user.isAdmin)
+      return res.status(403).send("Access denied. Not authorized...");
+
+    res.status(200).send(order);
+  } catch (error) {
+    res.status(500).send(error);
+  }
+});
+
+// GET ORDER STATS
+router.get("/stats", isAdmin, async (req, res) => {
+  const previousMonth = moment()
+    .month(moment().month() - 2)
+    .format();
+
+  try {
+    const orders = await Order.aggregate([
+      { $match: { createdAt: { $gte: new Date(previousMonth) } } },
+      {
+        $project: {
+          month: { $month: "$createdAt" },
+        },
+      },
+      {
+        $group: {
+          _id: "$month",
+          total: { $sum: 1 },
+        },
+      },
+    ]);
+    res.status(200).send(orders);
+  } catch (err) {
+    res.status(500).send(err);
+  }
+});
+
+// GET MONTHLY INCOME
+
+router.get("/income", isAdmin, async (req, res) => {
+  const previousMonth = moment()
+    .month(moment().month() - 2)
+    .format();
+
+  try {
+    const income = await Order.aggregate([
+      { $match: { createdAt: { $gte: new Date(previousMonth) } } },
+      {
+        $project: {
+          month: { $month: "$createdAt" },
+          sales: "$total",
+        },
+      },
+      {
+        $group: {
+          _id: "$month",
+          total: { $sum: "$sales" },
+        },
+      },
+    ]);
+    res.status(200).send(income);
+  } catch (err) {
+    res.status(500).send(err);
+  }
+});
+
+// WEEK'S SALES
+
+router.get("/week-sales", isAdmin, async (req, res) => {
+  const last7Days = moment()
+    .day(moment().day() - 7)
+    .format();
+
+  try {
+    const income = await Order.aggregate([
+      { $match: { createdAt: { $gte: new Date(last7Days) } } },
+      {
+        $project: {
+          day: { $dayOfWeek: "$createdAt" },
+          sales: "$total",
+        },
+      },
+      {
+        $group: {
+          _id: "$day",
+          total: { $sum: "$sales" },
+        },
+      },
+    ]);
+    res.status(200).send(income);
+  } catch (err) {
+    res.status(500).send(err);
+  }
+});
+
+module.exports = router;
+
+Filename: ./routes/propertyAddress.js
+// const express = require("express");
+// const { auth, isUser, isAdmin } = require("../middleware/auth");
+// const Web3 = require('web3');
+
+
+
+
+
+
+// router.get("/", async (req, res, next) => {
+//     try {
+//         const berbixdatas = await Berbix.find().sort({ date: -1 });
+//         // const filteredprop = prop.filter(pro => pro.uid === req.user._id);
+//         // res.send(filteredprop);
+//         res.send(berbixdatas);
+//     } catch (error) {
+//         res.status(500).send("Error: " + error.message);
+//         winston.error(error.message);
+//     }
+// });
+
+Filename: ./routes/register.js
+const bcrypt = require("bcrypt");
+const { User } = require("../models/user");
+const Joi = require("joi");
+const express = require("express");
+const generateAuthToken = require("../utils/generateAuthToken");
+const router = express.Router();
+const Web3 = require('web3');
+require("dotenv").config();
+const nodemailer = require("nodemailer");
+
+const Infura_url = process.env.Infura;
+const web3 = new Web3(Infura_url);
+
+let transporter = nodemailer.createTransport({
+  // host: "smtp.ethereal.email",
+  // port: 587,
+  secure: true, // true for 465, false for other ports
+  // host: "gmail",
+  port: 465,
+  host: "smtp.gmail.com",
+  service: "gmail",
+  auth: {
+    user: process.env.EMAIL, // generated ethereal user
+    pass: process.env.PASS, // generated ethereal password
+  },
+});
+
+const createAccount = async () => {
+  const newAccount = await web3.eth.accounts.create();
+  return newAccount;
+};
+
+router.post("/", async (req, res) => {
+  const schema = Joi.object({
+    first_name: Joi.string().min(3).max(100).required(),
+    last_name: Joi.string().min(3).max(100).required(),
+    phone: Joi.string().min(3).max(100).required(),
+    email: Joi.string().min(3).max(200).required().email(),
+    dateofBirth: Joi.string().min(3).max(200).required(),
+    residence_country: Joi.string().min(2).max(100).required(),
+    nationality: Joi.string().min(2).max(100).required(),
+    password: Joi.string().min(6).max(200).required(),
+  });
+
+  const { error } = schema.validate(req.body);
+
+  if (error) return res.status(400).send(error.details[0].message);
+
+  let user = await User.findOne({ email: req.body.email });
+  if (user) return res.status(400).send("User already exists...");
+
+  console.log("here");
+  // const { name,phone, email, password, adminAddress, privateKey } = req.body;
+  createAccount().then(async (ethereumAccount) => {
+    user = new User({
+      first_name: req.body.first_name,
+      last_name: req.body.last_name,
+      phone: req.body.phone,
+      email: req.body.email,
+      dateofBirth: req.body.dateofBirth,
+      residence_country: req.body.residence_country,
+      nationality: req.body.nationality,
+      password: req.body.password,
+      walletAddress: ethereumAccount.address,
+      privateKey: ethereumAccount.privateKey,
+    })
+    const mailOption = {
+      from: process.env.EMAIL,
+      to: req.body.email,
+      subject: " SecondaryDAO | Wallet PrivateKey",
+      text: `Dear Customer`,
+      html: `<h3>Your Wallet PrivateKey.
+      </h3>
+      <br/>
+      <p>Please Save this and import wallet address in your wallet.</p>
+      <br/>
+      <a> ${ethereumAccount.privateKey}</a>
+       `,
+    }
+    transporter.sendMail(mailOption, (error, info) => {
+      if (error) {
+        console.log("sending mail error", error)
+        return res.status(400).send("sending mail error...");
+      } else {
+        return res.status(200).send("Please Check you email");
+      }
+    })
+  })
+  // user = new User({ name,phone, email, password });
+
+  const salt = await bcrypt.genSalt(10);
+  user.password = await bcrypt.hash(user.password, salt);
+
+  await user.save();
+
+  const token = generateAuthToken(user);
+
+  res.send(token);
+});
+
+module.exports = router;
+
+Filename: ./routes/personaldb.js
+const { Personal } = require("../models/personal");
+const winston = require("winston");
+const Joi = require("joi");
+const { auth, isUser, isAdmin } = require("../middleware/auth");
+const router = require("express").Router();
+
+
+
+router.get("/", async (req, res, next) => {
+  try {
+    const prop = await Personal.find().sort({ date: -1 });
+    // const filteredprop = prop.filter(pro => pro.uid === req.user._id);
+    // res.send(filteredprop);
+    res.send(prop);
+  } catch (error) {
+    res.status(500).send("Error: " + error.message);
+    winston.error(error.message);
+  }
+});
+
+
+
+router.post("/", async (req, res) => {
+  const schema = Joi.object({
+    name: Joi.string().min(3).max(30).required(),
+    email: Joi.string().min(3).max(200).required().email(),
+    phone: Joi.string().min(3).max(200).required(),
+    card: Joi.string().min(3).max(200).required(),
+    address: Joi.string().min(3).max(10240).required(),
+    date: Joi.date(),
+    author: Joi.string().min(3),
+    uid: Joi.string(),
+  });
+
+  const { error } = schema.validate(req.body);
+
+  if (error) return res.status(400).send(error.details[0].message);
+
+  const { name, email, phone, card, address, buildingtype, propstatus, rent, propaddress, active, date, author, uid } = req.body;
+
+  let propt = new Personal({ name, email, phone, card, address, buildingtype, propstatus, rent, propaddress, active, date, author, uid });
+  try {
+    propt = await propt.save();
+    res.send(propt);
+  } catch (error) {
+    res.status(500).send("Error: " + error.message);
+    console.log(error.message);
+  }
+});
+
+
+router.put("/:id", async (req, res) => {
+  const schema = Joi.object({
+    name: Joi.string().min(3).max(30).required(),
+    email: Joi.string().min(3).max(200).required().email(),
+    phone: Joi.string().min(3).max(200).required(),
+    card: Joi.string().min(3).max(200).required(),
+    address: Joi.string().min(3).max(10240).required(),
+    date: Joi.date(),
+    author: Joi.string().min(3),
+    uid: Joi.string(),
+  });
+  const { error } = schema.validate(req.body);
+  if (error) return res.status(400).send(result.error.details[0].message);
+  try {
+    const prop = await Personal.findById(req.params.id);
+    if (!prop) return res.status(404).send("Personal not found...");
+    // if (prop.uid !== req.user._id)
+    // return res.status(401).send("Personal update failed. Not authorized...");
+    const { name, email, phone, card, address, buildingtype, propstatus, rent, propaddress, active, date, author, uid } = req.body;
+    const updatedprop = await Personal.findByIdAndUpdate(
+      req.params.id,
+      { name, email, phone, card, address, buildingtype, propstatus, rent, propaddress, active, date, author, uid },
+      { new: true }
+    );
+    res.send(updatedprop);
+  } catch (error) {
+    res.status(500).send("Error: " + error.message);
+    console.log(error.message);
+  }
+});
+
+
+
+// router.patch("/:id", async (req, res) => {
+//   try {
+//     const prop = await Personal.findById(req.params.id);
+//     if (!prop) return res.status(404).send("Personal not found...");
+//     // if (prop.uid !== req.user._id)
+//     // return res.status(401).send("Personal check/uncheck failed. Not authorized...");
+//     const updatedprop = await Personal.findByIdAndUpdate(
+//       req.params.id,
+//       {
+//         active: !prop.active,
+//       },
+//       {
+//         new: true,
+//       }
+//     );
+//     res.send(updatedprop);
+
+//   } catch (error) {
+//     res.status(500).send("Error: " + error.message);
+//     console.log(error.message);
+//   }
+
+// });
+
+
+
+router.delete("/:id", async (req, res) => {
+  try {
+    const prop = await Personal.findById(req.params.id);
+    if (!prop) return res.status(404).send("Personal not found...");
+    // if (prop.uid !== req.user._id)
+    // return res.status(401).send("Personal deletion failed. Not authorized...");
+    const deletedprop = await Personal.findByIdAndDelete(req.params.id);
+    res.send(deletedprop);
+  } catch (error) {
+    res.status(500).send("Error: " + error.message);
+    console.log(error.message);
+  }
+
+});
+
+module.exports = router;
+
+
+Filename: ./routes/propertiesdb.js
+const { Propertydb } = require("../models/propertydb");
+const winston = require("winston");
+const Joi = require("joi");
+const { auth, isUser, isAdmin } = require("../middleware/auth");
+const router = require("express").Router();
+
+
+// if (Web3.givenProvider && Web3.givenProvider.chainId === Web3.utils.toHex(421614)) {
+// }
+router.get("/", async (req, res, next) => {
+  try {
+    const propdb = await Propertydb.find().sort({ date: -1 });
+    // const filteredprop = prop.filter(pro => pro.uid === req.user._id);
+    // res.send(filteredprop);
+    res.send(propdb);
+  } catch (error) {
+    res.status(500).send("Error: " + error.message);
+    winston.error(error.message);
+  }
+});
+
+
+
+router.post("/", async (req, res) => {
+  const schema = Joi.object({
+    buildingtype: Joi.string().min(3).max(10240).required(),
+    propstatus: Joi.string().min(3).max(10240).required(),
+    rent: Joi.number().integer().min(3).max(102400000).required(),
+    propaddress: Joi.string().min(3).max(10240).required(),
+    active: Joi.boolean(),
+    date: Joi.date().default(false),
+    author: Joi.string().min(3),
+    uid: Joi.string(),
+  });
+
+  const { error } = schema.validate(req.body);
+
+  if (error) return res.status(400).send(error.details[0].message);
+
+  const {buildingtype, propstatus, rent, propaddress, active, date, author, uid } = req.body;
+
+  let propt = new Propertydb({buildingtype, propstatus, rent, propaddress, active, date, author, uid });
+  try {
+    propt = await propt.save();
+    res.send(propt);
+  } catch (error) {
+    res.status(500).send("Error: " + error.message);
+    console.log(error.message);
+  }
+});
+
+
+router.put("/:id", async (req, res) => {
+  const schema = Joi.object({
+    name: Joi.string().min(3).max(30).required(),
+    email: Joi.string().min(3).max(200).required().email(),
+    phone: Joi.string().min(3).max(200).required(),
+    card: Joi.string().min(3).max(200).required(),
+    address: Joi.string().min(3).max(10240).required(),
+    buildingtype: Joi.string().min(3).max(10240),
+    propstatus: Joi.string().min(3).max(10240),
+    rent: Joi.number().integer().min(3).max(10240),
+    propaddress: Joi.string().min(3).max(10240),
+    active: Joi.boolean(),
+    date: Joi.date(),
+    author: Joi.string().min(3),
+    uid: Joi.string(),
+  });
+  const { error } = schema.validate(req.body);
+  if (error) return res.status(400).send(result.error.details[0].message);
+  try {
+    const prop = await Propertydb.findById(req.params.id);
+    if (!prop) return res.status(404).send("Propertydb not found...");
+    // if (prop.uid !== req.user._id)
+    // return res.status(401).send("Property update failed. Not authorized...");
+    const {buildingtype, propstatus, rent, propaddress, active, date, author, uid } = req.body;
+    const updatedprop = await Propertydb.findByIdAndUpdate(
+      req.params.id,
+      {buildingtype, propstatus, rent, propaddress, active, date, author, uid },
+      { new: true }
+    );
+    res.send(updatedprop);
+  } catch (error) {
+    res.status(500).send("Error: " + error.message);
+    console.log(error.message);
+  }
+});
+
+
+
+router.patch("/:id", async (req, res) => {
+  try {
+    const prop = await Propertydb.findById(req.params.id);
+    if (!prop) return res.status(404).send("Propertydb not found...");
+    // if (prop.uid !== req.user._id)
+    // return res.status(401).send("Propertydb check/uncheck failed. Not authorized...");
+    const updatedprop = await Propertydb.findByIdAndUpdate(
+      req.params.id,
+      {
+        active: !prop.active,
+      },
+      {
+        new: true,
+      }
+    );
+    res.send(updatedprop);
+
+  } catch (error) {
+    res.status(500).send("Error: " + error.message);
+    console.log(error.message);
+  }
+
+});
+
+
+
+router.delete("/:id", async (req, res) => {
+  try {
+    const prop = await Propertydb.findById(req.params.id);
+    if (!prop) return res.status(404).send("Propertydb not found...");
+    // if (prop.uid !== req.user._id)
+    // return res.status(401).send("Propertydb deletion failed. Not authorized...");
+    const deletedprop = await Propertydb.findByIdAndDelete(req.params.id);
+    res.send(deletedprop);
+  } catch (error) {
+    res.status(500).send("Error: " + error.message);
+    console.log(error.message);
+  }
+
+});
+
+module.exports = router;
+
+
+Filename: ./routes/kyc.js
+const bcrypt = require("bcrypt");
+const { Kyc } = require("../models/Kyc");
+const { auth, isUser, isAdmin } = require("../middleware/auth");
+const moment = require("moment");
+const router = require("express").Router();
+const crypto = require("crypto");
+const { User } = require("../models/user");
+const mongoose = require("mongoose");
+const axios = require("axios");
+
+//GET ALL USERS
+router.get("/", isAdmin, async (req, res) => {
+  try {
+    const users = await User.find().sort({ _id: -1 });
+    res.status(200).send(users);
+  } catch (err) {
+    res.status(500).send(err);
+  }
+});
+
+//DELETE
+router.delete("/:id", isAdmin, async (req, res) => {
+  try {
+    const deletedUser = await User.findByIdAndDelete(req.params.id);
+
+    res.status(200).send(deletedUser);
+  } catch (error) {
+    res.status(500).send(error);
+  }
+});
+
+// GET USER
+// router.get("/find/:id", async (req, res) => {
+//   try {
+//     const kycCheck = await Kyc.findById(req.params.id);
+
+router.get("/find/:external_applicant_id", async (req, res) => {
+  try {
+    const kycCheck = await Kyc.findOne({
+      external_applicant_id: req.params.external_applicant_id,
+    });
+
+    if (!kycCheck) {
+      return res.status(404).send("KYC record not found");
+    }
+
+    res.status(200).send({
+      AMLAddressVerification: kycCheck.AMLAddressVerification,
+      kyc_data: kycCheck.kyc_data,
+      history: kycCheck.history,
+    });
+  } catch (error) {
+    res.status(500).send(error);
+  }
+});
+
+// PATCH UPDATE KYC
+router.patch("/:external_applicant_id", async (req, res) => {
+  try {
+    const { AMLAddressVerification } = req.body;
+
+    const updatedKyc = await Kyc.findOneAndUpdate(
+      { external_applicant_id: req.params.external_applicant_id },
+      { AMLAddressVerification },
+      { new: true }
+    );
+
+    if (!updatedKyc) {
+      return res.status(404).send("KYC record not found.");
+    }
+
+    res.status(200).send({
+      ...updatedKyc._doc,
+      AMLAddressVerification,
+    });
+  } catch (error) {
+    res.status(500).send(error);
+  }
+});
+
+router.post("/", async (req, res) => {
+  try {
+    const result = new Kyc({
+      type: req.body.type,
+      applicant_id: req.body.applicant_id,
+      verification_id: req.body.verification_id,
+      status: req.body.status,
+      verified: req.body.verified,
+      verifications: req.body.verifications,
+    });
+    const savedresult = await result.save();
+    res.status(200).send(savedresult);
+  } catch (error) {
+    res.status(500).send(error);
+  }
+});
+
+router.post("/kyc-callback", async (req, res) => {
+  const rawBody = req.rawBody.toString("utf-8");
+  if (!rawBody) {
+    console.error("Raw body is undefined");
+    return res.status(400).send("Raw body is missing");
+  }
+
+  const encodedBody = Buffer.from(rawBody, "utf-8").toString("base64");
+  const apiToken = "e31169640d9147493929ab77c9128470b16d"; // Your actual API token
+  const hmac = crypto.createHmac("sha512", apiToken);
+  const calculatedHash = hmac.update(encodedBody).digest("hex");
+
+  if (req.headers["x-data-integrity"] === calculatedHash) {
+    const { applicant_id, verification_id, applicant, type } =
+      JSON.parse(rawBody);
+    console.log("applicant => ", applicant);
+    console.log("type => ", type);
+    const { external_applicant_id } = applicant;
+
+    try {
+      console.log("JSON.parse(rawBody)", JSON.parse(rawBody));
+      let kycRecord = await Kyc.findOne({
+        external_applicant_id: external_applicant_id,
+      });
+
+      if (!kycRecord) {
+        kycRecord = new Kyc({ external_applicant_id });
+      }
+
+      kycRecord.kyc_data = JSON.parse(rawBody);
+
+      kycRecord.history.push({
+        kyc_data: JSON.parse(rawBody), // Store the full callback in history
+      });
+
+      await kycRecord.save();
+
+      await User.findOneAndUpdate(
+        { _id: mongoose.Types.ObjectId(external_applicant_id) },
+        { applicant_id: applicant_id, verification_id: verification_id },
+        { new: true }
+      );
+
+      return res.status(200).send("Verification status updated successfully.");
+    } catch (error) {
+      console.error("Error processing KYC callback:", error);
+      return res.status(500).send("Error processing callback");
+    }
+  } else {
+    console.error("Callback verification failed");
+    return res.status(400).send("Invalid callback signature");
+  }
+});
+
+// function generateToken(walletAddress, accessKey, accessId) {
+//   const stringToHash = `${walletAddress}:${accessKey}:${accessId}`;
+//   return crypto.createHash("md5").update(stringToHash).digest("hex");
+// }
+
+router.post("/verify-aml", async (req, res) => {
+  console.log("INSIDE API !");
+
+  const { walletAddress, asset } = req.body;
+
+  // These should ideally be stored securely in environment variables
+  const accessId = "11EAF-26E7E-3BA2335";
+  const accessKey =
+    "9Ixjn1AlV-lXElfVcRAo-I7xluirbhyv-dqb4LceI-jGr0N1QtC-z9u4ybbaWg";
+
+  try {
+    // Generate the token for the request
+    // return crypto.createHash("md5").update(stringToHash).digest("hex");
+    const stringToHash = `${walletAddress}:${accessKey}:${accessId}`;
+    const token = crypto.createHash("md5").update(stringToHash).digest("hex");
+    console.log("TOKEN GENERATED SUCCESS !", token);
+
+    // Prepare the payload
+
+    // flow:
+    // fast - It uses Algorithm A and is designed for users who need a quick response.
+    // accurate - temporary unavailable.
+    // advanced - It uses an advanced algorithm and is designed for users who require the highest level of accuracy and risk assessment.
+    const payload = new URLSearchParams({
+      accessId: accessId,
+      locale: "en_US", // or set your desired locale
+      hash: walletAddress,
+      asset: asset, // e.g., BTC, ETH, etc.
+      flow: "fast", // Can be 'fast', 'accurate', or 'advanced' (optional)
+      token: token,
+    });
+
+    console.log("BEFORE CALLING API !");
+    // Make the POST request to the AMLBot endpoint
+    const response = await axios.post(
+      "https://extrnlapiendpoint.silencatech.com/",
+      payload.toString(),
+      {
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+      }
+    );
+
+    console.log("AFTER CALLING API !!!!");
+    // Send the response back to the frontend
+    res.json(response.data);
+  } catch (error) {
+    console.error("Error during API call:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+router.get("/proxy/coins", async (req, res) => {
+  try {
+    const response = await axios.get(
+      "https://extrnlapiendpoint.silencatech.com/coins/",
+      {
+        headers: {
+          Authorization: "Token e31169640d9147493929ab77c9128470b16d",
+        },
+      }
+    );
+    console.log("response.data COINS => ", response.data);
+
+    res.json(response.data); // Forward the API response to your frontend
+    res.status(200).send("success");
+  } catch (error) {
+    console.error("Error fetching data from API:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// router.post("/kyc-callback", async (req, res) => {
+// // Step 1: Ensure raw body is captured and exists
+// const rawBody = req.body.toString("utf-8");
+// if (!rawBody) {
+//   console.error("Raw body is undefined");
+//   return res.status(400).send("Raw body is missing");
+// }
+
+// // Step 2: Base64 encode the raw body
+// const encodedBody = Buffer.from(rawBody, "utf-8").toString("base64");
+
+// // Step 3: Create the HMAC SHA-512 hash using the encoded body and your API token
+// const apiToken = "e31169640d9147493929ab77c9128470b16d"; // Replace with your actual API token
+// const hmac = crypto.createHmac("sha512", apiToken);
+// const calculatedHash = hmac.update(encodedBody).digest("hex");
+
+// console.log("x-data-integrity header:", req.headers["x-data-integrity"]);
+// console.log("Calculated hash:", calculatedHash);
+
+//   // Step 4: Compare the calculated hash with the x-data-integrity header
+//   if (req.headers["x-data-integrity"] === calculatedHash) {
+//     console.log("Callback verification successful");
+//     const {
+//       applicant_id,
+//       verification_status,
+//       verification_id,
+//       verification_attempts_left,
+//       verifications,
+//     } = JSON.parse(rawBody);
+//     // Step 5: Safely handle missing verifications object
+//     const profile = (verifications && verifications.profile) || {
+//       verified: false,
+//       comment: "",
+//       decline_reasons: [],
+//     };
+//     const document = (verifications && verifications.document) || {
+//       verified: false,
+//       comment: "",
+//       decline_reasons: [],
+//     };
+
+//     try {
+//       // Find the current KYC record for the user
+//       let kycRecord = await Kyc.findOne({ applicant_id: applicant_id });
+
+//       // If there's an existing KYC record, move the current data to the history
+//       if (kycRecord) {
+//         kycRecord.history.push({
+//           verification_id: kycRecord.verification_id,
+//           status: kycRecord.status,
+//           verified: kycRecord.verified,
+//           verifications: kycRecord.verifications,
+//           verification_attempts_left: kycRecord.verification_attempts_left,
+//           timestamp: new Date(),
+//         });
+//       } else {
+//         // If no KYC record exists, create a new one
+//         kycRecord = new Kyc({ applicant_id: applicant_id });
+//       }
+
+//       // Update the current KYC data
+//       kycRecord.verification_id = verification_id;
+//       kycRecord.status = verification_status;
+//       kycRecord.verified = profile.verified && document.verified; // or other logic for verified status
+//       kycRecord.verifications = { profile, document };
+
+//       // Save the updated KYC record
+//       await kycRecord.save();
+
+//       console.log("KYC verification updated in MongoDB:", kycRecord);
+
+//       // Step 6: Update the User Model to Reference the KYC Record
+//       const user = await User.findOneAndUpdate(
+//         { applicant_id: applicant_id },
+//         { kycId: kycRecord._id }, // Set the user's kycId field to reference the KYC record
+//         { new: true }
+//       );
+
+//       if (!user) {
+//         console.error("User not found for applicant_id:", applicant_id);
+//         return res.status(404).send("User not found");
+//       }
+
+//       console.log("User KYC reference updated:", user);
+//       res.status(200).send("Callback received and processed");
+//     } catch (error) {
+//       console.error("Error processing KYC callback:", error);
+//       res.status(500).send("Error processing callback");
+//     }
+//   } else {
+//     console.error("Callback verification failed");
+//     res.status(400).send("Invalid callback signature");
+//   }
+// });
+
+module.exports = router;
+
+Filename: ./routes/stripe.js
+const express = require("express");
+const Stripe = require("stripe");
+const { Order } = require("../models/order");
+
+require("dotenv").config();
+
+const stripe = Stripe(process.env.STRIPE_KEY);
+
+const router = express.Router();
+
+router.post("/create-checkout-session", async (req, res) => {
+  const customer = await stripe.customers.create({
+    metadata: {
+      userId: req.body.userId,
+    },
+  });
+
+  const line_items = req.body.cartItems.map((item) => {
+    return {
+      price_data: {
+        currency: "usd",
+        product_data: {
+          name: item.name,
+          images: [item.image.url],
+          description: item.desc,
+          metadata: {
+            id: item.id,
+          },
+        },
+        unit_amount: item.price * 100,
+      },
+      quantity: item.cartQuantity,
+    };
+  });
+
+  const session = await stripe.checkout.sessions.create({
+    payment_method_types: ["card"],
+    shipping_address_collection: {
+      allowed_countries: ["US", "CA", "KE","PK"],
+    },
+    shipping_options: [
+      {
+        shipping_rate_data: {
+          type: "fixed_amount",
+          fixed_amount: {
+            amount: 0,
+            currency: "usd",
+          },
+          display_name: "Free shipping",
+          // Delivers between 5-7 business days
+          delivery_estimate: {
+            minimum: {
+              unit: "business_day",
+              value: 5,
+            },
+            maximum: {
+              unit: "business_day",
+              value: 7,
+            },
+          },
+        },
+      },
+      {
+        shipping_rate_data: {
+          type: "fixed_amount",
+          fixed_amount: {
+            amount: 1500,
+            currency: "usd",
+          },
+          display_name: "Next day air",
+          // Delivers in exactly 1 business day
+          delivery_estimate: {
+            minimum: {
+              unit: "business_day",
+              value: 1,
+            },
+            maximum: {
+              unit: "business_day",
+              value: 1,
+            },
+          },
+        },
+      },
+    ],
+    phone_number_collection: {
+      enabled: true,
+    },
+    line_items,
+    mode: "payment",
+    customer: customer.id,
+    success_url: `${process.env.CLIENT_URL}/checkout-success`,
+    cancel_url: `${process.env.CLIENT_URL}/cart`,
+  });
+
+  // res.redirect(303, session.url);
+  res.send({ url: session.url });
+});
+
+// Create order function
+
+const createOrder = async (customer, data, lineItems) => {
+  const newOrder = new Order({
+    userId: customer.metadata.userId,
+    customerId: data.customer,
+    paymentIntentId: data.payment_intent,
+    products: lineItems.data,
+    subtotal: data.amount_subtotal,
+    total: data.amount_total,
+    shipping: data.customer_details,
+    payment_status: data.payment_status,
+  });
+
+  try {
+    const savedOrder = await newOrder.save();
+    console.log("Processed Order:", savedOrder);
+  } catch (err) {
+    console.log(err);
+  }
+};
+
+// Stripe webhoook
+
+router.post(
+  "/webhook",
+  express.json({ type: "application/json" }),
+  async (req, res) => {
+    let data;
+    let eventType;
+
+    // Check if webhook signing is configured.
+    let webhookSecret;
+    //webhookSecret = process.env.STRIPE_WEB_HOOK;
+
+    if (webhookSecret) {
+      // Retrieve the event by verifying the signature using the raw body and secret.
+      let event;
+      let signature = req.headers["stripe-signature"];
+
+      try {
+        event = stripe.webhooks.constructEvent(
+          req.body,
+          signature,
+          webhookSecret
+        );
+      } catch (err) {
+        console.log(`⚠️  Webhook signature verification failed:  ${err}`);
+        return res.sendStatus(400);
+      }
+      // Extract the object from the event.
+      data = event.data.object;
+      eventType = event.type;
+    } else {
+      // Webhook signing is recommended, but if the secret is not configured in `config.js`,
+      // retrieve the event data directly from the request body.
+      data = req.body.data.object;
+      eventType = req.body.type;
+    }
+
+    // Handle the checkout.session.completed event
+    if (eventType === "checkout.session.completed") {
+      stripe.customers
+        .retrieve(data.customer)
+        .then(async (customer) => {
+          try {
+            // CREATE ORDER
+            stripe.checkout.sessions.listLineItems(
+              data.id,
+              {},
+              function (err, lineItems) {
+                console.log("line_items", lineItems);
+
+                createOrder(customer, data, lineItems);
+              }
+            );
+          } catch (err) {
+            console.log(typeof createOrder);
+            console.log(err);
+          }
+        })
+        .catch((err) => console.log(err.message));
+    }
+
+    res.status(200).end();
+  }
+);
+
+module.exports = router;
+
+Filename: ./routes/TermsofCondition.js
+const {Terms} = require("../models/TermsofCondition");
+const router = require("express").Router();
+const { auth, isUser, isAdmin } = require("../middleware/auth");
+
+
+
+router.get("/", async (req, res, next) => {
+  try {
+    const prop = await Terms.find().sort({ date: -1 });
+    res.send(prop);
+  } catch (error) {
+    res.status(500).send("Error: " + error.message);
+    winston.error(error.message);
+  }
+});
+
+router.post("/", async (req, res) => {
+    try {
+        const newPost = new Terms(req.body);
+      const savedPost = await newPost.save();
+      res.status(200).send(savedPost);
+    } catch (err) {
+      res.status(500).json(err);
+    }
+  });
+
+  //UPDATE
+router.put("/:id", isAdmin, async (req, res) => {
+    try {
+      const updatedTerms = await Terms.findByIdAndUpdate(
+        req.params.id,
+        {
+          $set: req.body,
+        },
+        { new: true }
+      );
+      res.status(200).send(updatedTerms);
+    } catch (err) {
+      res.status(500).send(err);
+    }
+  });
+  
+  //DELETE
+  router.delete("/:id", isAdmin, async (req, res) => {
+    try {
+      await Terms.findByIdAndDelete(req.params.id);
+      res.status(200).send("Terms has been deleted...");
+    } catch (err) {
+      res.status(500).send(err);
+    }
+  });
+
+module.exports = router;
+Filename: ./routes/propertyInfo.js
+const { LLC } = require("../models/llc");
+const winston = require("winston");
+const mongoose = require("mongoose");
+const express = require("express");
+const app = express();
+require("dotenv").config();
+const { mongo, connection } = require('mongoose');
+const Joi = require("joi");
+const path = require('path');
+const { auth, isUser, isAdmin } = require("../middleware/auth");
+const router = require("express").Router();
+const multer = require('multer');
+const crypto = require('crypto');
+const { GridFsStorage } = require('multer-gridfs-storage');
+const Grid = require('gridfs-stream');
+const { config } = require("dotenv");
+const methodOverride = require('method-override');
+
+
+
+const url = process.env.DB_URI;
+
+const conn = mongoose.createConnection(url, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+})
+
+
+let gfs;
+conn.once('open', () => {
+    // Init stream
+    gfs = new mongoose.mongo.GridFSBucket(conn.db, {
+        bucketName: "uploads"
+    });
+    //   gfs = Grid(conn.db, mongoose.mongo);
+    //   gfs.collection('uploads');
+});
+
+
+
+// const storage = multer.diskStorage({
+//   destination: function (req, file, cb) {
+//     cb(null, 'uploads')
+//   },
+//   filename: function (req, file, cb) {
+//     let ext = path.extname(file.originalname)
+//     cb(null, Date.now() + '-' + ext)
+//   }
+// })
+
+// // mimetype.split
+// const upload = multer({
+//   storage: storage,
+//   fileFilter: function (req, file, callback) {
+//     if (
+//       file.mimetype.split("/")[1] == "pdf"
+//       // ||
+//       // file.mimetype == "image/jpg"
+//     ) {
+//       callback(null, true)
+//     } else {
+//       console.log('only png or jpg file supported!')
+//       callback(null, false)
+//     }
+//   },
+//   // limits:{
+//   //     fileSize: 1024 * 1024 * 2
+//   // }
+// })
+
+const storagefs = GridFsStorage({
+    url: url,
+    file: (req, file) => {
+        return new Promise((resolve, reject) => {
+            crypto.randomBytes(16, (err, buf) => {
+                if (err) {
+                    return reject(err);
+                }
+                const filename = buf.toString('hex') + path.extname(file.originalname);
+                const fileInfo = {
+                    filename: filename,
+                    bucketName: "uploads"
+                };
+                resolve(fileInfo);
+            })
+        })
+    }
+})
+
+const uploadGrid = multer({
+    storage: storagefs,
+    fileFilter: function (req, file, callback) {
+        if (
+            file.mimetype.split("/")[1] == "pdf"
+            // ||
+            // file.mimetype == "image/jpg"
+        ) {
+            callback(null, true)
+        } else {
+            console.log('only png or jpg file supported!')
+            callback(null, false)
+        }
+    },
+    // limits:{
+    //     fileSize: 1024 * 1024 * 2
+    // }
+})
+
+
+
+router.get("/", async (req, res, next) => {
+    try {
+        const propllcdb = await LLC.find().sort({ date: -1 });
+        // const filteredprop = prop.filter(pro => pro.uid === req.user._id);
+        // res.send(filteredprop);
+        res.send(propllcdb);
+    } catch (error) {
+        res.status(500).send("Error: " + error.message);
+        winston.error(error.message);
+    }
+});
+
+// router.get('/files/:filename', (req, res) => {
+//     gfs.files.find({ filename: req.params.filename }).toArray((err, files) => {
+//       if(!files || files.length === 0){
+//         return res.status(404).json({
+//           message: "Could not find file"
+//         });
+//       }
+//       var readstream = gfs.createReadStream({
+//         filename: files[0].filename
+//       })
+//       res.set('Content-Type', files[0].contentType);
+//       return readstream.pipe(res);
+//     });
+//   });
+
+//   router.get('/files', (req, res) => {
+//     gfs.files.find().toArray((err, files) => {
+//       if(!files || files.length === 0){
+//         return res.status(404).json({
+//           message: "Could not find files"
+//         });
+//       }
+//       return res.json(files);
+//   });
+//   })
+
+  const uploadMiddleware = (req, res, next) => {
+    const upload = uploadGrid.single('fileupload');
+    upload(req, res, function (err) {
+      if (err instanceof multer.MulterError) {
+        return res.status(400).send('File too large');
+      } else if (err) {
+        // check if our filetype error occurred
+        if (err === 'filetype') return res.status(400).send('pdf files only');
+        // An unknown error occurred when uploading.
+        return res.sendStatus(500);
+      }
+      // all good, proceed
+      next();
+    });
+  };
+
+  router.post('/', uploadMiddleware, async (req, res) => {
+    let FileLoad;
+    if (req.file) {
+        FileLoad = req.file.path;
+      }
+    const proLLC = new LLC({
+        buildingtype: req.body.buildingtype,
+        propstatus: req.body.propstatus,
+        rent: req.body.rent,
+        propaddress: req.body.propaddress,
+        corpname: req.body.corpname,
+        corptype: req.body.corptype,
+        regState: req.body.regState,
+        corpId: req.body.corpId,
+        ein: req.body.ein,
+        incorporated: req.body.incorporated,
+        mailingAddress: req.body.mailingAddress,
+        regAgentAddress: req.body.regAgentAddress,
+        fileupload: FileLoad,
+    });
+    // res.send({ success: false });
+        const savedproLLC = await proLLC.save();
+        res.status(200).send(savedproLLC);
+  });
+// app.post("/upload", uploadGrid.single("fileupload"), (req, res) => {
+//     res.status(200)
+//       .send("File uploaded successfully");
+//   });
+
+
+// router.post("/upload/", uploadMiddleware, async (req, res) => {
+//     try {
+
+//         const proLLC = new LLC({
+//             buildingtype: req.body.buildingtype,
+//             propstatus: req.body.propstatus,
+//             rent: req.body.rent,
+//             propaddress: req.body.propaddress,
+//             corpname: req.body.corpname,
+//             corptype: req.body.corptype,
+//             regState: req.body.regState,
+//             corpId: req.body.corpId,
+//             ein: req.body.ein,
+//             incorporated: req.body.incorporated,
+//             mailingAddress: req.body.mailingAddress,
+//             regAgentAddress: req.body.regAgentAddress,
+//             // fileupload: fileupload,
+//         });
+//         if (req.file) {
+//             proLLC.fileupload = req.file.path
+//         }
+//         const savedproLLC = await proLLC.save();
+//         res.status(200).send(savedproLLC);
+
+//     } catch (error) {
+//         console.log(error);
+//         res.status(500).send(error);
+//     }
+// });
+
+// router.post("/", upload.single('fileupload'), async (req, res) => {
+//     try {
+
+//         const proLLC = new LLC({
+//             buildingtype: req.body.buildingtype,
+//             propstatus: req.body.propstatus,
+//             rent: req.body.rent,
+//             propaddress: req.body.propaddress,
+//             corpname: req.body.corpname,
+//             corptype: req.body.corptype,
+//             regState: req.body.regState,
+//             corpId: req.body.corpId,
+//             ein: req.body.ein,
+//             incorporated: req.body.incorporated,
+//             mailingAddress: req.body.mailingAddress,
+//             regAgentAddress: req.body.regAgentAddress,
+//             // fileupload: req.file.path,
+//         });
+//         if (req.file) {
+//             proLLC.fileupload = req.file.path
+//         }
+//         const savedproLLC = await proLLC.save();
+//         res.status(200).send(savedproLLC);
+
+//     } catch (error) {
+//         console.log(error);
+//         res.status(500).send(error);
+//     }
+// });
+
+
+
+
+router.delete("/:id", async (req, res) => {
+    try {
+        const prop = await LLC.findById(req.params.id);
+        if (!prop) return res.status(404).send("Property LCC not found...");
+        // if (prop.uid !== req.user._id)
+        // return res.status(401).send("Propertydb deletion failed. Not authorized...");
+        const deletedprop = await LLC.findByIdAndDelete(req.params.id);
+        res.send(deletedprop);
+    } catch (error) {
+        res.status(500).send("Error: " + error.message);
+        console.log(error.message);
+    }
+
+});
+
+module.exports = router;
+
+
+Filename: ./routes/ChangePassword.js
+const bcrypt = require("bcrypt");
+const { User } = require("../models/user");
+const { Opt } = require("../models/opt");
+const router = require("express").Router();
+
+
+
+router.post("/", async (req, res) => {
+  try {
+    const data = await Opt.find({ email: req.body.email, code: req.body.code });
+    console.log("change password data", data);
+    if (data) {
+      let currentTime = new Date().getTime();
+      let time = data[0].expireIn - currentTime;
+      if (time > 0) {
+        const emailInUse = await User.findOne({ email: req.body.email });
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(req.body.password, salt);
+        emailInUse.password = hashedPassword
+        emailInUse.save();
+        return res.status(200).send("Pasword change successfully");
+      } else {
+        console.log("OTP Expire")
+        return res.status(400).send("OTP is Expired");
+      }
+    }else{
+      return res.status(400).send("Enter a valid OTP");
+    }
+
+  } catch (error) {
+    res.status(500).send(error);
+  }
+});
+
+
+module.exports = router;
+Filename: ./routes/buyerOrder.js
+const { BuyersOrder } = require("../models/BuyersOrder");
+const { Product } = require("../models/product");
+const { User } = require("../models/user");
+const { auth, isUser, isAdmin } = require("../middleware/auth");
+const moment = require("moment");
+const router = require("express").Router();
+const Infura_url = process.env.Infura;
+const ContractAddress = process.env.CONTRACT_ADDRESS;
+const Web3 = require('web3');
+const web3 = new Web3(Infura_url);
+const ContractABI = require("../contract/SecondaryDAO.json");
+const USDTabi = require("../contract/USDT.json");
+const USDTContractAddress = process.env.USDTADDRESS;
+const USDTADDRESS = "0x32Af54FF4Fc6341064410A9bE1cAf74E43119B47";
+
+router.post("/", async (req, res) => {
+  try {
+    const order = new BuyersOrder({
+      PropertyAddress: req.body.PropertyAddress,
+      BuyersAddress: req.body.BuyersAddress,
+      Type_Of_Currency: req.body.Type_Of_Currency,
+      Number_of_Tokens: req.body.Number_of_Tokens,
+      Price_of_Tokens: req.body.Price_of_Tokens,
+      Usdt_Usdc: req.body.Usdt_Usdc,
+      r: req.body.r,
+      s: req.body.s,
+      v: req.body.v,
+      expireIn: req.body.expireIn,
+      // expireIn: new Date().getTime() + 864000 * 1000,
+      Statue: req.body.Statue,
+    });
+    const savedorder = await order.save();
+    res.status(200).send(savedorder);
+  } catch (error) {
+    res.status(500).send(error);
+  }
+})
+
+//UPDATE
+router.put("/:id", isUser, async (req, res) => {
+  try {
+    const updatedOrder = await BuyersOrder.findByIdAndUpdate(
+      req.params.id,
+      {
+        $set: req.body,
+      },
+      { new: true }
+    );
+    res.status(200).send(updatedOrder);
+  } catch (err) {
+    res.status(500).send(err);
+  }
+});
+
+router.patch("/:id", async (req, res) => {
+  try {
+    const ord = await BuyersOrder.findById(req.params.id);
+    if (!ord) return res.status(404).send("Buyer not found...");
+    const orders = await Product.findOne({ PropertyAddress: ord.PropertyAddress });
+    const fromUser = await User.findOne({ walletAddress: orders.AdminWallet });
+    if (!orders) return res.status(404).send("Property Address not found...");
+    const USDTContract = new web3.eth.Contract(USDTabi, USDTADDRESS);
+    console.log("v", ord.v)
+    console.log("s", ord.s)
+    console.log("r", ord.r)
+    if (!USDTContract) return res.status(404).send("USDT Contract not found...");
+    let approval = await USDTContract?.methods.permit(
+      ord.BuyersAddress,
+      orders.AdminWallet,
+      ord.Usdt_Usdc,
+      ord.expireIn,
+      ord.v,
+      ord.r,
+      ord.s,
+      );
+      const encodedABI = approval.encodeABI();
+      web3.eth.estimateGas({
+        from: orders.AdminWallet,
+        to: USDTADDRESS,
+        data: encodedABI
+      })
+      .then(gasEstimate => {
+	      console.log('Gas estimate:', gasEstimate);
+	      const transactionAdmin = {
+	        from: orders.AdminWallet, // Replace with your Ethereum address
+	        to: USDTADDRESS, // Replace with your smart contract address
+	        gas: gasEstimate, // Set an appropriate gas limit
+	        data: encodedABI // Include the encoded ABI data here
+	      };
+	      web3.eth.accounts.signTransaction(transactionAdmin, fromUser.privateKey)
+	      .then(signedTx => {
+	        return web3.eth.sendSignedTransaction(signedTx.rawTransaction);
+	      }).then(async (receipt) => {
+	        console.log('Transaction receipt:', receipt);
+          const updatedord = await BuyersOrder.findByIdAndUpdate(
+            req.params.id,
+            req.body,
+            {
+              new: true,
+            }
+          );
+          res.send(updatedord);
+        })
+      })
+
+  } catch (error) {
+    res.status(500).send("Error: " + error.message);
+    console.log(error.message);
+  }
+
+});
+
+//DELETE
+router.delete("/:id", isAdmin, async (req, res) => {
+  try {
+    await BuyersOrder.findByIdAndDelete(req.params.id);
+    res.status(200).send("Order has been deleted...");
+  } catch (err) {
+    res.status(500).send(err);
+  }
+});
+
+//GET USER ORDERS
+router.get("/fetch/:id", async (req, res) => {
+  try {
+    const orders = await BuyersOrder.find({ _id: req.params.id });
+    res.status(200).send(orders);
+  } catch (err) {
+    res.status(500).send(err);
+  }
+});
+
+//GET USER ORDERS
+router.get("/findID/:BuyersAddress", async (req, res) => {
+  try {
+    const orders = await BuyersOrder.find({ BuyersAddress: req.params.BuyersAddress });
+    res.status(200).send(orders);
+  } catch (err) {
+    res.status(500).send(err);
+  }
+});
+
+//GET Property ORDERS 
+router.get("/find/:PropertyAddress", async (req, res) => {
+  try {
+    const orders = await BuyersOrder.find({ PropertyAddress: req.params.PropertyAddress });
+    res.status(200).send(orders);
+  } catch (err) {
+    res.status(500).send(err);
+  }
+});
+
+//GET ALL ORDERS
+router.get("/", async (req, res) => {
+  // const query = req.query.new;
+  const qlocation = req.query.location;
+  try {
+    // const orders = query
+    //   ? await BuyersOrder.find().sort({ _id: -1 }).limit(4)
+    //   : await BuyersOrder.find().sort({ _id: -1 });
+    // res.status(200).send(orders);
+    let orders;
+
+    if (qlocation) {
+      products = await BuyersOrder.find({
+        location: qlocation,
+      }).sort({ _id: -1 });
+    } else {
+      orders = await BuyersOrder.find().sort({ _id: -1 });
+    }
+
+    res.status(200).send(orders);
+  } catch (err) {
+    res.status(500).send(err);
+  }
+});
+
+
+module.exports = router;
+Filename: ./routes/blogdb.js
+// Import necessary modules and models
+const { Blog } = require("../models/blog");
+const express = require("express");
+const router = express.Router();
+
+// CREATE POST
+router.post("/", async (req, res) => {
+  try {
+    // Create a new blog post with the data from the request body
+    const newPost = new Blog(req.body);
+    // Save the new post to the database
+    const savedPost = await newPost.save();
+    // Send the saved post as the response
+    res.status(200).send(savedPost);
+  } catch (err) {
+    // Send an error response if something goes wrong
+    res.status(500).json(err);
+  }
+});
+
+// UPDATE POST
+router.put("/:id", async (req, res) => {
+  try {
+    // Find the post by ID
+    const post = await Blog.findById(req.params.id);
+    // Check if the post belongs to the user making the request
+    if (post.name === req.body.name) {
+      try {
+        // Update the post with the new data from the request body
+        const updatedPost = await Blog.findByIdAndUpdate(
+          req.params.id,
+          { $set: req.body },
+          { new: true }
+        );
+        // Send the updated post as the response
+        res.status(200).json(updatedPost);
+      } catch (err) {
+        // Send an error response if something goes wrong
+        res.status(500).json(err);
+      }
+    } else {
+      // Send a forbidden response if the user is not authorized to update the post
+      res.status(401).json("You can update only your post!");
+    }
+  } catch (err) {
+    // Send an error response if something goes wrong
+    res.status(500).json(err);
+  }
+});
+
+// DELETE POST
+router.delete("/:id", async (req, res) => {
+  try {
+    // Find the post by ID
+    const post = await Blog.findById(req.params.id);
+    // Check if the post belongs to the user making the request
+    if (post.name === req.body.name) {
+      try {
+        // Delete the post from the database
+        await post.delete();
+        // Send a success response
+        res.status(200).json("Post has been deleted...");
+      } catch (err) {
+        // Send an error response if something goes wrong
+        res.status(500).json(err);
+      }
+    } else {
+      // Send a forbidden response if the user is not authorized to delete the post
+      res.status(401).json("You can delete only your post!");
+    }
+  } catch (err) {
+    // Send an error response if something goes wrong
+    res.status(500).json(err);
+  }
+});
+
+// GET POST
+router.get("/:id", async (req, res) => {
+  try {
+    // Find the post by ID
+    const post = await Blog.findById(req.params.id);
+    // Send the post as the response
+    res.status(200).json(post);
+  } catch (err) {
+    // Send an error response if something goes wrong
+    res.status(500).json(err);
+  }
+});
+
+// GET ALL POSTS
+router.get("/", async (req, res) => {
+  const username = req.query.user;
+  const catName = req.query.cat;
+  try {
+    let posts;
+    // If a username is provided, find posts by that user
+    if (username) {
+      posts = await Blog.find({ username });
+    // If a category name is provided, find posts in that category
+    } else if (catName) {
+      posts = await Blog.find({
+        categories: { $in: [catName] },
+      });
+    // If no query parameters are provided, find all posts
+    } else {
+      posts = await Blog.find();
+    }
+    // Send the posts as the response
+    res.status(200).json(posts);
+  } catch (err) {
+    // Send an error response if something goes wrong
+    res.status(500).json(err);
+  }
+});
+
+// Export the router to be used in other parts of the application
+module.exports = router;
+Filename: ./routes/sendemail.js
+const express = require("express");
+const nodemailer = require("nodemailer");
+const { Opt } = require("../models/opt");
+const { User } = require("../models/user");
+require("dotenv").config();
+const router = express.Router();
+
+
+let transporter = nodemailer.createTransport({
+  // host: "smtp.ethereal.email",
+  // port: 587,
+  secure: true, // true for 465, false for other ports
+  // host: "gmail",
+  port: 465,
+  host: "smtp.gmail.com",
+  service: "gmail",
+  auth: {
+    user: process.env.EMAIL, // generated ethereal user
+    pass: process.env.PASS, // generated ethereal password
+  },
+});
+
+
+router.get("/", async (req, res, next) => {
+  try {
+      const optdata = await Opt.find().sort({ date: -1 });
+      // const filteredprop = prop.filter(pro => pro.uid === req.user._id);
+      // res.send(filteredprop);
+      res.send(optdata);
+  } catch (error) {
+      res.status(500).send("Error: " + error.message);
+      winston.error(error.message);
+  }
+});
+
+
+router.post("/", async (req, res) => {
+
+  let data = await User.findOne({ email: req.body.email });
+  if (data) {
+    let optcode = Math.floor((Math.random() * 10000) + 1);
+    let ExistEmail = await Opt.findOne({ email: req.body.email });
+    if (ExistEmail) {
+      const updatData = await Opt.findByIdAndUpdate({ _id: ExistEmail._id },
+        {
+          code: optcode,
+          expireIn: new Date().getTime()+300*1000
+        }, { new: true });
+      await updatData.save();
+      const mailOption = {
+        from: process.env.EMAIL,
+        to: req.body.email,
+        subject: "SecondaryDAO | One Time Password (OTP)",
+        text: `Dear Customer`,
+        html: `<b>${optcode} is your One Time Password (OTP). Note that this password will expire after 2 minutes.</b>`, 
+      }
+      transporter.sendMail(mailOption, (error, info) => {
+        if (error) {
+          console.log("sending mail error", error)
+          return res.status(400).send("sending mail error...");
+        } else {
+          return res.status(200).send("Please Check you email");
+        }
+      })
+      // return res.status(400).send("Please Check you email");
+    } else {
+      let Optdata = new Opt({
+        email: req.body.email,
+        code: optcode,
+        expireIn: new Date().getTime() + 300 * 1000
+      })
+      console.log("DATA SEND:", optcode);
+      await Optdata.save();
+      // return res.status(200).send("Please Check you email");
+      const mailOption = {
+        from: process.env.EMAIL,
+        to: req.body.email,
+        subject:" SecondaryDAO | One Time Password (OTP)",
+        text: `Dear Customer`,
+        html: `<b> ${optcode} is your One Time Password (OTP). Note that this password will expire after 2 minutes.</b>`, 
+      }
+      transporter.sendMail(mailOption, (error, info) => {
+        if (error) {
+          console.log("sending mail error", error)
+          return res.status(400).send("sending mail error...");
+        } else {
+          return res.status(200).send("Please Check you email");
+        }
+      })
+    }
+    // let Optdata = new Opt({
+    //   email: req.body.email,
+    //   code: optcode,
+    //   expireIn: new Date().getTime() + 300 * 1000
+    // })
+    // console.log("DATA SEND:", optcode);
+    // let otpResponse = await Optdata.save();
+    // return res.status(400).send("Please Check you email");
+  } else {
+    return res.status(400).send("Invalid email or password...");
+  }
+
+});
+
+
+module.exports = router;
+
+Filename: ./models/opt.js
+const mongoose = require("mongoose");
+
+const optSchema = new mongoose.Schema(
+  {
+    email: { type: String},
+    code: { type: String},
+    expireIn:{type: Number}
+  },
+  { timestamps: true }
+);
+
+const Opt = mongoose.model("Opt", optSchema);
+
+exports.Opt = Opt;
+
+Filename: ./models/OrderMatching.js
+const mongoose = require("mongoose");
+
+const orderMatchingSchema = new mongoose.Schema(
+  {
+    orderId:{ type: String, required: true },
+    PropertyAddress:{ type: String, required: true},
+    BuyersAddress: { type: String, required: true},
+    SellersAddress: { type: String, required: true},
+    Type_Of_Currency: { type: Number},
+    Property_Tokens: { type: Number, required: true },
+    Calculate_Tokens: { type: Number},
+    Price_of_Tokens: { type: Number,},
+    Buyerfee:{ type: Number},
+    Sellerfee:{ type: Number},
+    IsBuyerApprove: { type: Boolean, default: false },
+    IsSellerApprove: { type: Boolean, default: false }
+  },
+  { timestamps: true }
+);
+
+const OrderMatching = mongoose.model("OrderMatching", orderMatchingSchema);
+
+exports.OrderMatching = OrderMatching;
+
+Filename: ./models/product.js
+const mongoose = require("mongoose");
+
+const propertySchema = new mongoose.Schema(
+  {
+    uid: {type: String},
+    name: { type: String,required: true, minlength: 3, maxlength: 10240 },
+    AdminWallet: {type: String, required: true},
+    location: { type: String,required: true, minlength: 3, maxlength: 10240 },
+    propertytype : { type: String,required: true, minlength: 3, maxlength: 10240 },
+    bedroom:{ type: Number,required: true},
+    bathroom:{ type: Number,required: true},
+    area:{ type: Number,required: true},
+    propaddress: { type: String, required: true, minlength: 3, maxlength: 10240 },
+    date: {type: Date, default: new Date()},
+    desc: { type: String},
+    image: { type: Object, required: true },
+    tokenHolder: {type: [Object]},
+  },
+  { timestamps: true }
+);
+
+const Product = mongoose.model("Product", propertySchema);
+
+exports.Product = Product;
+
+Filename: ./models/Kyc.js
+const mongoose = require("mongoose");
+
+// Simplified Document Schema
+const documentSchema = new mongoose.Schema({
+  document_id: { type: String },
+  type: { type: String },
+  status: { type: String, default: "invalid" },
+  decline_reasons: { type: [String], default: [] },
+});
+
+// Simplified Applicant Schema
+const applicantSchema = new mongoose.Schema({
+  applicant_id: { type: String, required: true },
+  first_name: { type: String },
+  last_name: { type: String },
+  decline_reasons: { type: [String] },
+  verification_status: { type: String },
+  documents: { type: [documentSchema], default: [] },
+});
+
+const kycSchema = new mongoose.Schema({
+  // applicant_id: { type: String, required: true },
+  // verification_id: { type: String, default: null },
+  // status: { type: String, default: "unused" },
+  // verified: { type: Boolean, default: false },
+  // verification_attempts_left: { type: Number, default: -1 },
+  // type: { type: String },
+  // verifications: {
+  //   profile: {
+  //     verified: { type: Boolean, default: false },
+  //     comment: { type: String, default: "" },
+  //     decline_reasons: { type: [String], default: [] },
+  //   },
+  //   document: {
+  //     verified: { type: Boolean, default: false },
+  //     comment: { type: String, default: "" },
+  //     decline_reasons: { type: [String], default: [] },
+  //   },
+  // },
+  // applicant: { type: applicantSchema },
+  AMLAddressVerification: { type: mongoose.Schema.Types.Mixed },
+  external_applicant_id: { type: String, required: true },
+  kyc_data: { type: mongoose.Schema.Types.Mixed },
+
+  history: [
+    {
+      kyc_data: { type: mongoose.Schema.Types.Mixed },
+      // verification_id: { type: String, default: null },
+      // status: { type: String, default: "unused" },
+      // verified: { type: Boolean, default: false },
+      // // verification_attempts_left: { type: Number, required: true },
+      // verifications: {
+      //   profile: {
+      //     verified: { type: Boolean, default: false },
+      //     comment: { type: String, default: "" },
+      //     decline_reasons: { type: [String], default: [] },
+      //   },
+      //   document: {
+      //     verified: { type: Boolean, default: false },
+      //     comment: { type: String, default: "" },
+      //     decline_reasons: { type: [String], default: [] },
+      //   },
+      // },
+      // timestamp: { type: Date, default: Date.now },
+    },
+  ],
+
+  createdAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date, default: Date.now },
+});
+
+// const kycSchema = new mongoose.Schema(
+//   {
+//     type: { type: String, required: true },
+//     applicant_id: { type: String, required: true },
+//     verification_id: { type: String, required: true },
+//     status: { type: String, required: true },
+//     verified: { type: Boolean, default: false },
+//     verifications: { type: String, required: true },
+//     form_id: { type: String, required: true },
+//     form_token: { type: String, required: true },
+//     verification_attempts_left: { type: Number, required: true },
+//   },
+//   { timestamps: true }
+// );
+
+const Kyc = mongoose.model("Kyc", kycSchema);
+
+exports.Kyc = Kyc;
+
+Filename: ./models/BuyersOrder.js
+const mongoose = require("mongoose");
+
+const buyersSchema = new mongoose.Schema(
+  {
+    PropertyAddress:{ type: String, required: true},
+    BuyersAddress: { type: String, required: true},
+    Type_Of_Currency: { type: Number, required: true },
+    Number_of_Tokens: { type: Number, required: true },
+    Price_of_Tokens: { type: Number, required: true },
+    Usdt_Usdc: { type: Number, required: true },
+    r:{ type: String, required: true},
+    s:{ type: String, required: true},
+    v:{ type: Number, required: true},
+    expireIn:{type: Number},
+    Statue: { type: Boolean, default: false },
+  },
+  { timestamps: true }
+);
+
+const BuyersOrder = mongoose.model("BuyersOrder", buyersSchema);
+
+exports.BuyersOrder = BuyersOrder;
+
+Filename: ./models/propertydb.js
+// const { number } = require("joi");
+const mongoose = require("mongoose");
+
+const propertydbSchema = new mongoose.Schema(
+  {
+    buildingtype: { type: String,required: true, minlength: 3, maxlength: 10240 },
+    propstatus: { type: String,required: true, minlength: 3, maxlength: 10240 },
+    rent:{ type: Number,required: true, minlength: 3, maxlength: 102400000 },
+    propaddress: { type: String, required: true, minlength: 3, maxlength: 10240 },
+    active:{ type: Boolean, default: false },
+    date: {type: Date, default: new Date()},
+    author: {type:String},
+    uid: {type: String},
+  },
+  // { timestamps: true }
+);
+
+const Propertydb = mongoose.model("Propertydb", propertydbSchema);
+
+exports.Propertydb = Propertydb;
+// module.exports.Property = Property;
+// module.exports = Property;
+Filename: ./models/user.js
+const mongoose = require("mongoose");
+
+const walletSchema = new mongoose.Schema({
+  address: { type: String, required: true },
+  active: { type: Boolean, default: false },
+  addressVerificationStatus: { type: Object, default: null },
+});
+
+const userSchema = new mongoose.Schema(
+  {
+    first_name: { type: String, required: true, minlength: 3, maxlength: 100 },
+    last_name: { type: String, required: true, minlength: 3, maxlength: 100 },
+    phone: { type: String, required: true, minlength: 3, maxlength: 100 },
+    email: {
+      type: String,
+      required: true,
+      minlength: 3,
+      maxlength: 200,
+      unique: true,
+    },
+    dateofBirth: { type: Date, required: true },
+    residence_country: { type: String, required: true },
+    nationality: { type: String, required: true },
+    password: { type: String, required: true, minlength: 3, maxlength: 1024 },
+    walletAddress: { type: String, required: true },
+    privateKey: { type: String, required: true },
+    applicant_id: { type: String },
+    verification_id: { type: String },
+    isAdmin: { type: Boolean, default: false },
+    isAccept: { type: Boolean, default: false },
+    applicant_id: { type: String, default: null },
+    verification_id: { type: String, default: null },
+    wallets: [walletSchema],
+    // kycId: { type: mongoose.Schema.Types.ObjectId, ref: "Kyc", default: null },
+  },
+  { timestamps: true }
+);
+
+const User = mongoose.model("User", userSchema);
+
+exports.User = User;
+
+Filename: ./models/personal.js
+// const { number } = require("joi");
+const mongoose = require("mongoose");
+
+const personalSchema = new mongoose.Schema(
+  {
+    name: { type: String, required: true, minlength: 3, maxlength: 30 },
+    email: { type: String, required: true, minlength: 3, maxlength: 200 },
+    phone: { type: String, required: true, minlength: 3, maxlength: 200 },
+    card:{ type: String, required: true, minlength: 3, maxlength: 200 },
+    address: { type: String, required: true, minlength: 3, maxlength: 10240 },
+    date: {type: Date, default: new Date()},
+    author: {type:String},
+    uid: {type: String},
+  },
+  // { timestamps: true }
+);
+
+const Personal = mongoose.model("Personal", personalSchema);
+
+exports.Personal = Personal;
+// module.exports.Property = Property;
+// module.exports = Property;
+Filename: ./models/blog.js
+const mongoose = require("mongoose");
+
+const blogSchema = new mongoose.Schema(
+  {
+    title: {
+      type: String,
+      required: true,
+      unique: true,
+    },
+    desc: {
+      type: String,
+      required: true,
+    },
+    photo: {
+      type: String,
+      required: false,
+    },
+    name: {
+      type: String,
+      required: true,
+    },
+    categories: {
+      type: Array,
+      required: false,
+    },
+  },
+  { timestamps: true }
+);
+
+const Blog = mongoose.model("Blog", blogSchema);
+exports.Blog = Blog;
+Filename: ./models/categoryblog.js
+const mongoose = require("mongoose");
+
+const categorySchema = new mongoose.Schema(
+  {
+    name: {
+      type: String,
+      required: true,
+    },
+  },
+  { timestamps: true }
+);
+
+const Category = mongoose.model("Category", categorySchema);
+exports.Category = Category;
+Filename: ./models/llc.js
+const mongoose = require("mongoose");
+
+const propllcSchema = new mongoose.Schema(
+  {
+    buildingtype: { type: String,required: true, minlength: 3, maxlength: 1240 },
+    propstatus: { type: String,required: true, minlength: 3, maxlength: 1240 },
+    rent:{ type: Number,required: true, minlength: 3, maxlength: 102400000 },
+    propaddress: { type: String, required: true, minlength: 3, maxlength: 10240 },
+    corpname:{ type: String, required: true, minlength: 3, maxlength: 50 },
+    corptype:{ type: String, required: true, minlength: 3, maxlength: 1240 },
+    regState:{ type: String, required: true, minlength: 3, maxlength: 1240 },
+    corpId: { type: String, required: true, minlength: 3, maxlength: 200 },
+    ein:{ type: String, required: true, minlength: 3, maxlength: 200 },
+    incorporated:{ type: Date},
+    mailingAddress:{ type: String, required: true, minlength: 3, maxlength: 10240 },
+    regAgentAddress:{ type: String, required: true, minlength: 3, maxlength: 10240 },
+    fileupload:{type: String},
+    // active:{ type: Boolean, default: false },
+    date: {type: Date, default: new Date()},
+    // active: { type: String, required: true },
+  },
+  { timestamps: true }
+);
+
+const LLC = mongoose.model("LLC", propllcSchema);
+
+exports.LLC = LLC;
+
+Filename: ./models/SellersOrder.js
+const mongoose = require("mongoose");
+
+const sellersSchema = new mongoose.Schema(
+  {
+    PropertyAddress:{ type: String, required: true},
+    SellersAddress: { type: String, required: true},
+    Number_of_Tokens: { type: Number, required: true },
+    Price_of_Tokens: { type: Number, required: true },
+    r:{ type: String, required: true},
+    s:{ type: String, required: true},
+    v:{ type: Number, required: true},
+    expireIn:{type: Number},
+    Statue: { type: Boolean, default: false }
+  },
+  { timestamps: true }
+);
+
+const SellersOrder = mongoose.model("SellersOrder", sellersSchema);
+
+exports.SellersOrder = SellersOrder;
+
+Filename: ./models/TermsofCondition.js
+const mongoose = require("mongoose");
+
+const termsSchema = new mongoose.Schema(
+  {
+    // usersId: { type: String, required: true },
+    heading:{ type: String},
+    desc: { type: String},
+    // isAccept: { type: Boolean, default: false },
+  },
+  { timestamps: true }
+);
+
+const Terms = mongoose.model("Terms", termsSchema);
+
+exports.Terms = Terms;
+
+Filename: ./models/order.js
+const mongoose = require("mongoose");
+
+const orderSchema = new mongoose.Schema(
+  {
+    userId: { type: String, required: true },
+    products: [],
+    subtotal: { type: Number, required: true },
+    total: { type: Number, required: true },
+    shipping: { type: Object, required: true },
+    delivery_status: { type: String, default: "pending" },
+    payment_status: { type: String, required: true },
+  },
+  { timestamps: true }
+);
+
+const Order = mongoose.model("Order", orderSchema);
+
+exports.Order = Order;
+
+Filename: ./middleware/auth.js
+const jwt = require("jsonwebtoken");
+
+const auth = (req, res, next) => {
+  const token = req.header("x-auth-token");
+  if (!token)
+    return res.status(401).send("Access denied. Not authenticated...");
+  try {
+    const jwtSecretKey = process.env.JWT_SECRET_KEY;
+    const decoded = jwt.verify(token, jwtSecretKey);
+
+    req.user = decoded;
+    next();
+  } catch (ex) {
+    res.status(400).send("Invalid auth token...");
+  }
+};
+
+// For User Profile
+const isUser = (req, res, next) => {
+  auth(req, res, () => {
+    if (req.user._id === req.params.id || req.user.isAdmin) {
+      next();
+    } else {
+      res.status(403).send("Access denied. Not authorized...");
+    }
+  });
+};
+
+// For Admin
+const isAdmin = (req, res, next) => {
+  auth(req, res, () => {
+    if (req.user.isAdmin) {
+      next();
+    } else {
+      res.status(403).send("Access denied. Not authorized...");
+    }
+  });
+};
+
+module.exports = { auth, isUser, isAdmin };
+

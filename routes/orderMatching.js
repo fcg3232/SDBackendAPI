@@ -52,11 +52,11 @@ router.post("/", async (req, res) => {
                     <br/>
                     <a> Request for Approval Tokens: ${(req.body.Property_Tokens)/10**18}</a>
                     <br/>
-                    <a> PlateForm fee: ${(req.body.Buyerfee)/10**8}</a>
+                    <a> Platform fee: ${(req.body.Buyerfee)/10**8}</a>
                     <br/>
                     <a> Seller Address: ${req.body.SellersAddress}</a>
                     <br/>
-                    <p>Please visit SecondaryDAO Dashboard.</p>
+                    <p>Please visit <a href="https://app.secondarydao.com">SecondaryDAO Dashboard</a>.</p>
                     <br/>
                      `,
                 }
@@ -65,7 +65,7 @@ router.post("/", async (req, res) => {
                         console.log("sending mail error", error)
                         return res.status(400).send("sending mail error...");
                     } else {
-                        return res.status(200).send("Please Check you email");
+                        return res.status(200).send("Please check you email");
                     }
                 })
                 const savedorders = await order.save();
@@ -99,11 +99,11 @@ router.post("/", async (req, res) => {
                     <br/>
                     <a> Request for Approval Tokens: ${(req.body.Property_Tokens)/10**18}</a>
                     <br/>
-                    <a> PlateForm fee: ${(req.body.Sellerfee)/10**18}</a>
+                    <a> Platform fee: ${(req.body.Sellerfee)/10**18}</a>
                     <br/>
                     <a> Buyer Address: ${req.body.BuyersAddress}</a>
                     <br/>
-                    <p>Please visit SecondaryDAO Dashboard.</p>
+                    <p>Please visit <a href="https://app.secondarydao.com">SecondaryDAO Dashboard</a>.</p>
                     <br/>
                      `,
                 }
