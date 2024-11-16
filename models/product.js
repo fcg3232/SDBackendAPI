@@ -14,6 +14,12 @@ const propertySchema = new mongoose.Schema(
     date: {type: Date, default: new Date()},
     desc: { type: String},
     image: { type: Object, required: true },
+    // status: { type: String, enum: ['active', 'Inactive', 'Closed'] },
+    isStartSelling: { type: Boolean, default: false },
+    isReStartSelling: { type: Boolean, default: false },
+    tokenPrice: {type: Number},
+    totalSupply:{type: Number},
+    tokenBlance:{type: Number},
     tokenHolder: {type: [Object]},
   },
   { timestamps: true }
