@@ -35,6 +35,7 @@ const Infura_url = process.env.Infura;
 const web3 = new Web3(Infura_url);
 const cron = require('node-cron');
 const { deflateRaw } = require("zlib");
+const { json } = require("body-parser");
 const app = express();
 require("dotenv").config();
 const ObjectId = mongoose.Types.ObjectId;
@@ -47,40 +48,41 @@ const calculateRentalYeild = async () => {
     const rentalIncome = await Rent.find({ propertyId: products[i]._id });
     // const det = [];
     if (rentalIncome.length > 0) {
-      // for (let j = 0; j < rentalIncome.length; j++) {
+      for (let j = 0; j < rentalIncome.length; j++) {
         // det.push(rentalIncome)
-        console.log(rentalIncome[i].year)
+        
         const Expenses = await Expense.find({
           propertyId: products[i]._id,
-          year: rentalIncome[i].yearś
+          year: rentalIncome[j].year
         });
+        // console.log(Expenses[0].totalExpense)
         // console.log(Expenses)
         if (Expenses) {
-          const cal = ((rentalIncome[i].annualRentalIncome - Expenses.totalExpense) / (products[i].purchasePrice / 1e8)) * 100
-          
+          const cal = ((rentalIncome[j].annualRentalIncome - Expenses[0].totalExpense) / (products[i].purchasePrice / 1e8)) * 100 ;
+
           await Rent.findByIdAndUpdate(
-            rentalIncome[i]._id,
+            rentalIncome[j]._id,
             {
               rentalYield: cal,
             },
           )
         }
-      // }
+      }
     }
 
   }
 
 };
 
-calculateRentalYeild()
-// run after every 2 hours
-// const cornupdateRentalYeild = async () => {
-//   cron.schedule('0  */2 * * *', async () => {
-//     await calculateRentalYeild();
 
-//   })
-// }
-// cornupdateRentalYeild();
+// run after every 2 hours
+const cornupdateRentalYeild = async () => {
+  cron.schedule('0  */2 * * *', async () => {
+    await calculateRentalYeild();
+
+  })
+}
+cornupdateRentalYeild();
 
 const calculateAnnualRent = async () => {
   const products = await Product.find();
