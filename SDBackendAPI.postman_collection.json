@@ -1,0 +1,318 @@
+{
+  "info": {
+    "name": "SDBackendAPI",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Register User",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"First_name\": \"User's first name\",\n  \"Last_name\": \"User's last name\",\n  \"phone\": \"Mobile number\",\n  \"email\": \"Email Address\",\n  \"dateofBirth\": \"Date of Birth\",\n  \"Residence_country\": \"Country of residence\",\n  \"Nationality\": \"Nationality\",\n  \"Password\": \"At least 8 characters\"\n}"
+        },
+        "url": {
+          "raw": "https://api.secondarydao.com/api/register",
+          "protocol": "https",
+          "host": ["api", "secondarydao", "com"],
+          "path": ["api", "register"]
+        }
+      }
+    },
+    {
+      "name": "User Login",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"User's email address\",\n  \"password\": \"User's password\"\n}"
+        },
+        "url": {
+          "raw": "https://api.secondarydao.com/api/login",
+          "protocol": "https",
+          "host": ["api", "secondarydao", "com"],
+          "path": ["api", "login"]
+        }
+      }
+    },
+    {
+      "name": "Create Property",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"uid\": \"Property unique ID\",\n  \"name\": \"Property Name\",\n  \"AdminWallet\": \"Admin's wallet address\",\n  \"location\": \"Property Location\",\n  \"propertyType\": \"Type of Property\",\n  \"bedroom\": \"Number of bedrooms\",\n  \"bathroom\": \"Number of bathrooms\",\n  \"propertyaddress\": \"Physical address\",\n  \"date\": \"Listed date\",\n  \"desc\": \"Property description\",\n  \"image\": \"Property image URL\"\n}"
+        },
+        "url": {
+          "raw": "https://api.secondarydao.com/api/products",
+          "protocol": "https",
+          "host": ["api", "secondarydao", "com"],
+          "path": ["api", "products"]
+        }
+      }
+    },
+    {
+      "name": "Update Property Token Price",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "https://api.secondarydao.com/api/products/update/:id",
+          "protocol": "https",
+          "host": ["api", "secondarydao", "com"],
+          "path": ["api", "products", "update", ":id"]
+        }
+      }
+    },
+    {
+      "name": "Delete Property",
+      "request": {
+        "method": "DELETE",
+        "url": {
+          "raw": "https://api.secondarydao.com/api/products/:id",
+          "protocol": "https",
+          "host": ["api", "secondarydao", "com"],
+          "path": ["api", "products", ":id"]
+        }
+      }
+    },
+    {
+      "name": "Get All Properties",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "https://api.secondarydao.com/api/products",
+          "protocol": "https",
+          "host": ["api", "secondarydao", "com"],
+          "path": ["api", "products"]
+        }
+      }
+    },
+    {
+      "name": "Place Buy Order",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"PropertyAddress\": \"Property address\",\n  \"BuyerWallet\": \"Buyer's wallet address\",\n  \"TokenAmount\": \"Amount of tokens\"\n}"
+        },
+        "url": {
+          "raw": "https://api.secondarydao.com/api/buyerOrder",
+          "protocol": "https",
+          "host": ["api", "secondarydao", "com"],
+          "path": ["api", "buyerOrder"]
+        }
+      }
+    },
+    {
+      "name": "Approve Buy Order",
+      "request": {
+        "method": "PATCH",
+        "url": {
+          "raw": "https://api.secondarydao.com/api/buyerOrder/:id",
+          "protocol": "https",
+          "host": ["api", "secondarydao", "com"],
+          "path": ["api", "buyerOrder", ":id"]
+        }
+      }
+    },
+    {
+      "name": "Fetch Buy Orders by Property Address",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "https://api.secondarydao.com/api/buyerOrder/find/:PropertyAddress",
+          "protocol": "https",
+          "host": ["api", "secondarydao", "com"],
+          "path": ["api", "buyerOrder", "find", ":PropertyAddress"]
+        }
+      }
+    },
+    {
+      "name": "Change Password",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"User email\",\n  \"password\": \"New password\"\n}"
+        },
+        "url": {
+          "raw": "https://api.secondarydao.com/api/changePassword",
+          "protocol": "https",
+          "host": ["api", "secondarydao", "com"],
+          "path": ["api", "changePassword"]
+        }
+      }
+    },
+    {
+      "name": "Fetch All Users",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "https://api.secondarydao.com/api/users",
+          "protocol": "https",
+          "host": ["api", "secondarydao", "com"],
+          "path": ["api", "users"]
+        }
+      }
+    },
+    {
+      "name": "Delete User by ID",
+      "request": {
+        "method": "DELETE",
+        "url": {
+          "raw": "https://api.secondarydao.com/api/:id",
+          "protocol": "https",
+          "host": ["api", "secondarydao", "com"],
+          "path": ["api", ":id"]
+        }
+      }
+    },
+    {
+      "name": "Get User by ID",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "https://api.secondarydao.com/api/find/:id",
+          "protocol": "https",
+          "host": ["api", "secondarydao", "com"],
+          "path": ["api", "find", ":id"]
+        }
+      }
+    },
+    {
+      "name": "Update User During KYC",
+      "request": {
+        "method": "PATCH",
+        "url": {
+          "raw": "https://api.secondarydao.com/api/:id",
+          "protocol": "https",
+          "host": ["api", "secondarydao", "com"],
+          "path": ["api", ":id"]
+        }
+      }
+    },
+    {
+      "name": "Accept Terms and Conditions",
+      "request": {
+        "method": "PUT",
+        "url": {
+          "raw": "https://api.secondarydao.com/api/isaccept/:id",
+          "protocol": "https",
+          "host": ["api", "secondarydao", "com"],
+          "path": ["api", "isaccept", ":id"]
+        }
+      }
+    },
+    {
+      "name": "Update User",
+      "request": {
+        "method": "PUT",
+        "url": {
+          "raw": "https://api.secondarydao.com/api/:id",
+          "protocol": "https",
+          "host": ["api", "secondarydao", "com"],
+          "path": ["api", ":id"]
+        }
+      }
+    },
+    {
+      "name": "Update User Wallet Public Key",
+      "request": {
+        "method": "PATCH",
+        "url": {
+          "raw": "https://api.secondarydao.com/api/wallet/update/:id",
+          "protocol": "https",
+          "host": ["api", "secondarydao", "com"],
+          "path": ["api", "wallet", "update", ":id"]
+        }
+      }
+    },
+    {
+      "name": "Create Blog Post",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Blog title\",\n  \"content\": \"Blog content\"\n}"
+        },
+        "url": {
+          "raw": "https://api.secondarydao.com/api/blogdb",
+          "protocol": "https",
+          "host": ["api", "secondarydao", "com"],
+          "path": ["api", "blogdb"]
+        }
+      }
+    },
+    {
+      "name": "Retrieve All Blogs",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "https://api.secondarydao.com/api/blogdb",
+          "protocol": "https",
+          "host": ["api", "secondarydao", "com"],
+          "path": ["api", "blogdb"]
+        }
+      }
+    },
+    {
+      "name": "Update Blog",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Updated blog title\",\n  \"content\": \"Updated blog content\"\n}"
+        },
+        "url": {
+          "raw": "https://api.secondarydao.com/api/blogdb/:id",
+          "protocol": "https",
+          "host": ["api", "secondarydao", "com"],
+          "path": ["api", "blogdb", ":id"]
+        }
+      }
+    }
+  ]
+}
