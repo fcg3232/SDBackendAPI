@@ -1,0 +1,65 @@
+{
+    "info": {
+      "name": "SDBackendAPI",
+      "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "item": [
+      {
+        "name": "Register User",
+        "request": {
+          "method": "POST",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": {
+            "mode": "raw",
+            "raw": JSON.stringify({
+              "First_name": "User's first name",
+              "Last_name": "User's last name",
+              "phone": "Mobile number",
+              "email": "Email Address",
+              "dateofBirth": "Date of Birth",
+              "Residence_country": "Country of residence",
+              "Nationality": "Nationality",
+              "Password": "At least 8 characters"
+            }, null, 2)
+          },
+          "url": {
+            "raw": "https://api.secondarydao.com/api/register",
+            "protocol": "https",
+            "host": ["api", "secondarydao", "com"],
+            "path": ["api", "register"]
+          }
+        }
+      },
+      {
+        "name": "User Login",
+        "request": {
+          "method": "POST",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": {
+            "mode": "raw",
+            "raw": JSON.stringify({
+              "email": "User's email address",
+              "password": "User's password"
+            }, null, 2)
+          },
+          "url": {
+            "raw": "https://api.secondarydao.com/api/login",
+            "protocol": "https",
+            "host": ["api", "secondarydao", "com"],
+            "path": ["api", "login"]
+          }
+        }
+      },
+      // Add more endpoints here following the same structure
+    ]
+  }
