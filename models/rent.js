@@ -33,6 +33,10 @@ const RentSchema = new mongoose.Schema({
         type: Number, 
         default: 0 
     },
+    annualCoC: { 
+        type: Number, 
+        default: 0 
+    },
     createdAt: { 
         type: Date, 
         default: Date.now 

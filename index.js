@@ -42,6 +42,38 @@ const ObjectId = mongoose.Types.ObjectId;
 // app.use(express.json());
 // app.use(bodyParser.raw({ type: "application/json" }));
 
+const calculateAnnualCoC = async () => {
+  const products = await Product.find();
+  for (let i = 0; i < products.length; i++) {
+    const rentalIncome = await Rent.find({ propertyId: products[i]._id });
+    // const det = [];
+    if (rentalIncome.length > 0) {
+      for (let j = 0; j < rentalIncome.length; j++) {
+        // det.push(rentalIncome)
+        
+        const Expenses = await Expense.find({
+          propertyId: products[i]._id,
+          year: rentalIncome[j].year
+        });
+        // console.log(Expenses[0].totalExpense)
+        // console.log(Expenses)
+        if (Expenses) {
+          const cal = ((rentalIncome[j].annualRentalIncome - Expenses[0].totalExpense) / (products[i].purchasePrice / 1e8 + products[i].listingfee/ 1e8 + products[i].InitialReserves/ 1e8)) * 100 ;
+
+          await Rent.findByIdAndUpdate(
+            rentalIncome[j]._id,
+            {
+              annualCoC: cal,
+            },
+          )
+        }
+      }
+    }
+
+  }
+
+};
+calculateAnnualCoC()
 const calculateRentalYeild = async () => {
   const products = await Product.find();
   for (let i = 0; i < products.length; i++) {
