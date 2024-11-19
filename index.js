@@ -10,6 +10,8 @@ const orders = require("./routes/orders");
 const stripe = require("./routes/stripe");
 const users = require("./routes/users");
 const productsRoute = require("./routes/products");
+const Expenses = require("./routes/Expenses");
+const Rentdb = require("./routes/Rent");
 const personaldb = require("./routes/personaldb");
 const propertydb = require("./routes/propertiesdb");
 const propllc = require("./routes/propLLC");
@@ -24,17 +26,182 @@ const buyerOrder = require("./routes/buyerOrder");
 const sellerOrder = require("./routes/sellerOrder");
 const orderMatching = require("./routes/orderMatching");
 const { Product } = require("./models/product");
+const { Expense } = require("./models/expense");
+const { Rent } = require("./models/rent");
 const PropertyABI = require("./contract/Property.json");
 const EscrowABI = require("./contract/Escrow.json");
 const Web3 = require('web3');
 const Infura_url = process.env.Infura;
 const web3 = new Web3(Infura_url);
 const cron = require('node-cron');
+const { deflateRaw } = require("zlib");
 const app = express();
 require("dotenv").config();
+const ObjectId = mongoose.Types.ObjectId;
 // app.use(express.json());
 // app.use(bodyParser.raw({ type: "application/json" }));
 
+const calculateRentalYeild = async () => {
+  const products = await Product.find();
+  for (let i = 0; i < products.length; i++) {
+    const rentalIncome = await Rent.find({ propertyId: products[i]._id });
+    // const det = [];
+    if (rentalIncome.length > 0) {
+      // for (let j = 0; j < rentalIncome.length; j++) {
+        // det.push(rentalIncome)
+        console.log(rentalIncome[i].year)
+        const Expenses = await Expense.find({
+          propertyId: products[i]._id,
+          year: rentalIncome[i].yearś
+        });
+        // console.log(Expenses)
+        if (Expenses) {
+          const cal = ((rentalIncome[i].annualRentalIncome - Expenses.totalExpense) / (products[i].purchasePrice / 1e8)) * 100
+          
+          await Rent.findByIdAndUpdate(
+            rentalIncome[i]._id,
+            {
+              rentalYield: cal,
+            },
+          )
+        }
+      // }
+    }
+
+  }
+
+};
+
+calculateRentalYeild()
+// run after every 2 hours
+// const cornupdateRentalYeild = async () => {
+//   cron.schedule('0  */2 * * *', async () => {
+//     await calculateRentalYeild();
+
+//   })
+// }
+// cornupdateRentalYeild();
+
+const calculateAnnualRent = async () => {
+  const products = await Product.find();
+
+  for (let i = 0; i < products.length; i++) {
+    const rentalIncome = await Rent.find({ propertyId: products[i]._id });
+
+    if (rentalIncome.length > 0) {
+      for (let j = 0; j < rentalIncome.length; j++) {
+        const result = await Rent.aggregate([
+          {
+            $match: {
+              propertyId: ObjectId(rentalIncome[j].propertyId),
+              year: rentalIncome[j].year
+            }
+          },
+          {
+            $unwind: "$rent" // Deconstruct the rent array into individual documents
+          },
+          {
+            $group: {
+              _id: null, // No specific grouping key needed
+              annualRentalIncome: { $sum: "$rent.amount" } // Sum the amount fields
+            }
+          }
+        ]);
+        await Rent.findByIdAndUpdate(
+          rentalIncome[j]._id,
+          {
+            annualRentalIncome: result[0].annualRentalIncome,
+          },
+        )
+      }
+    }
+  }
+
+};
+// run after every 2 hours
+const cornupdateAnnualRent = async () => {
+  cron.schedule('0  */2 * * *', async () => {
+    await calculateAnnualRent();
+
+  })
+}
+cornupdateAnnualRent();
+
+const calculateTotalExpense = async () => {
+  const products = await Product.find();
+  for (let i = 0; i < products.length; i++) {
+    const Expenses = await Expense.find({ propertyId: products[i]._id });
+    console.log(Expenses.length)
+    for (let j = 0; j < Expenses.length; j++) {
+      if (Expenses.length > 0) {
+        const result = await Expense.aggregate([
+          {
+            $match: {
+              propertyId: ObjectId(Expenses[j].propertyId),
+              year: Expenses[j].year
+            }
+          },
+          {
+            $unwind: "$expenses" // Deconstruct the expenses array into individual documents
+          },
+          {
+            $group: {
+              _id: null, // No specific grouping key needed
+              totalExpense: { $sum: "$expenses.amount" } // Sum the amount fields
+            }
+          }
+        ]);
+        await Expense.findByIdAndUpdate(
+          Expenses[j]._id,
+          {
+            totalExpense: result[0].totalExpense,
+          },
+        )
+      }
+    }
+  }
+
+};
+
+// run after every 2 hours
+const cornupdateExpense = async () => {
+  cron.schedule('0  */2 * * *', async () => {
+    await calculateTotalExpense();
+
+  })
+}
+cornupdateExpense();
+
+
+
+const fetchPropertyDetails = async () => {
+  try {
+    const products = await Product.find();
+    for (let i = 0; i < products.length; i++) {
+      const Contract = new web3.eth.Contract(PropertyABI, products[i].uid);
+      const det = await Contract?.methods.getCompletePropDetails().call({ from: products[i].AdminWallet });
+      await Product.findByIdAndUpdate(
+        products[i]._id,
+        {
+          listingfee: det.PropertyDetails.ListingFee,
+          InitialReserves: det.PropertyDetails.InitialManagementReserves,
+          purchasePrice: det.PropertyDetails.PurchasePrice,
+        },
+      )
+    }
+    // }
+
+  } catch (error) {
+    console.log(error.message);
+  }
+}
+
+const cornupdatePropertyDetails = async () => {
+  cron.schedule('0 0 * * *', async () => {
+    await fetchPropertyDetails();
+  })
+}
+cornupdatePropertyDetails();
 
 const fetchTokenBalance = async () => {
   try {
@@ -67,8 +234,7 @@ const fetchTokenBalance = async () => {
 
 
 const cornupdateTokenBalance = async () => {
-  cron.schedule('0 0 * * *', async () => {
-    console.log('update Token Balance');
+  cron.schedule('0  */2 * * *', async () => {
     await fetchTokenBalance();
   })
 }
@@ -104,8 +270,7 @@ const fetchTotalSupply = async () => {
 }
 
 const cornupdateTotalSupply = async () => {
-  cron.schedule('0 0 * * *', async () => {
-    console.log('update Token Supply');
+  cron.schedule('0  */2 * * *', async () => {
     await fetchTotalSupply();
   })
 }
@@ -134,8 +299,7 @@ const fetchTtokenPrice = async () => {
 
 // '*/2 * * * *'
 const cornupdateTokenPrice = async () => {
-  cron.schedule('0 0 * * *', async () => {
-    console.log('update Token PRice');
+  cron.schedule('0  */2 * * *', async () => {
     await fetchTtokenPrice();
   })
 }
@@ -162,8 +326,7 @@ const updateReSelling = async () => {
 }
 
 const cornupdateReSelling = async () => {
-  cron.schedule('0 0 * * *', async () => {
-    console.log('update Re_Selling');
+  cron.schedule('0  */2 * * *', async () => {
     await updateReSelling();
   })
 }
@@ -192,7 +355,6 @@ const updateSelling = async () => {
 
 const cornUpdateSelling = async () => {
   cron.schedule('0 0 * * *', async () => {
-    console.log('Update Selling...');
     await updateSelling();
   })
 }
@@ -278,6 +440,9 @@ app.use("/api/propertyInfo", propinfo);
 app.use("/api/blogdb", blogRoute);
 app.use("/api/categorydb", categoryRoute);
 app.use("/api/kyc", kycRouts);
+app.use("/api/expense", Expenses);
+app.use("/api/rent", Rentdb);
+
 // app.use("/api/kyc", bodyParser.raw({ type: "application/json" }), kycRouts);
 
 app.use("/api/sendemail", emailRouts);
