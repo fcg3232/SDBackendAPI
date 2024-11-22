@@ -468,7 +468,7 @@ app.use((err, req, res, next) => {
     "X-Requested-With, content-type, authorization"
   );
   next();
-});
+
 
 // app.use(express.static(path.join(__dirname, "./frontend/dist")));
 
