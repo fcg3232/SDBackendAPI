@@ -36,12 +36,13 @@ const web3 = new Web3(Infura_url);
 const cron = require("node-cron");
 const { deflateRaw } = require("zlib");
 const { json } = require("body-parser");
-const app = express();
 require("dotenv").config();
 const ObjectId = mongoose.Types.ObjectId;
 
 // app.use(express.json());
 // app.use(bodyParser.raw({ type: "application/json" }));
+const app = express();
+
 
 const allowedOrigins = [
   "https://www.app.secondarydao.com",
@@ -71,8 +72,6 @@ app.use(
 );
 
 
-// Optional: Handle preflight requests
-app.options("*", cors());
 
 
 const calculateAnnualCoC = async () => {
@@ -441,7 +440,7 @@ app.use(
     parameterLimit: 50000,
   })
 );
-app.use(cors());
+
 
 app.use(
   express.json({ extended: true, parameterLimit: 1000000000, limit: "50000mb" })
@@ -458,17 +457,7 @@ app.use((err, req, res, next) => {
   }
 });
 
-app.use((req, res, next) => {
-  res.setHeader(
-    "Access-Control-Allow-Methods",
-    "GET, POST, OPTIONS, PUT, PATCH, DELETE"
-  );
-  res.setHeader(
-    "Access-Control-Allow-Headers",
-    "X-Requested-With, content-type, authorization"
-  );
-  next();
-});
+
 
 
 // app.use(express.static(path.join(__dirname, "./frontend/dist")));
