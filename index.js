@@ -58,7 +58,7 @@ app.use(
       if (allowedOrigins.includes(origin)) {
         callback(null, true); // Origin allowed
       } else {
-        callback(new Error("Not allowed by CORS")); // Origin not allowed
+        callback(new Error(`CORS blocked for origin: ${origin}`));
       }
     },
     methods: ['GET', 'POST', 'OPTIONS', 'PUT', 'DELETE'],
