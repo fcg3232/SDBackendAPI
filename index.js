@@ -450,11 +450,15 @@ app.use(
 
 app.use(bodyParser.json({ limit: "50000mb" }));
 
-app.use((req, res, next) => {
-  const origin = req.headers.origin;
-  if (allowedOrigins.includes(origin)) {
-    res.setHeader("Access-Control-Allow-Origin", origin);
+app.use((err, req, res, next) => {
+  if (err.message.includes("CORS")) {
+    console.error("CORS error:", err.message);
+    res.status(403).json({ error: "CORS policy error", message: err.message });
+  } else {
+    next(err);
   }
+});
+
   res.setHeader(
     "Access-Control-Allow-Methods",
     "GET, POST, OPTIONS, PUT, PATCH, DELETE"
