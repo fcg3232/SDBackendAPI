@@ -33,14 +33,38 @@ const EscrowABI = require("./contract/Escrow.json");
 const Web3 = require('web3');
 const Infura_url = process.env.Infura;
 const web3 = new Web3(Infura_url);
-const cron = require('node-cron');
+const cron = require("node-cron");
 const { deflateRaw } = require("zlib");
 const { json } = require("body-parser");
 const app = express();
 require("dotenv").config();
 const ObjectId = mongoose.Types.ObjectId;
+
 // app.use(express.json());
 // app.use(bodyParser.raw({ type: "application/json" }));
+
+// CORS configuration
+const allowedOrigins = [
+  "https://www.app.secondarydao.com",
+  "https://www.secondarydao.com",
+];
+
+// Dynamically set CORS origin
+app.use(cors({
+  origin: function (origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+          callback(null, true);
+      } else {
+          callback(new Error("Not allowed by CORS"));
+      }
+  },
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+}));
+
+// Optional: Handle preflight requests
+app.options("*", cors());
+
 
 const calculateAnnualCoC = async () => {
   const products = await Product.find();
