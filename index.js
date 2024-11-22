@@ -90,6 +90,22 @@ app.use((err, req, res, next) => {
   }
 });
 
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  if (allowedOrigins.includes(origin)) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+  }
+  res.setHeader(
+    "Access-Control-Allow-Methods",
+    "GET, POST, OPTIONS, PUT, PATCH, DELETE"
+  );
+  res.setHeader(
+    "Access-Control-Allow-Headers",
+    "X-Requested-With, content-type, authorization"
+  );
+  next();
+});
+
 
 const calculateAnnualCoC = async () => {
   const products = await Product.find();
