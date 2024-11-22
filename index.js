@@ -441,7 +441,6 @@ app.use(
     parameterLimit: 50000,
   })
 );
-
 app.use(cors());
 
 app.use(
@@ -459,6 +458,7 @@ app.use((err, req, res, next) => {
   }
 });
 
+app.use((req, res, next) => {
   res.setHeader(
     "Access-Control-Allow-Methods",
     "GET, POST, OPTIONS, PUT, PATCH, DELETE"
@@ -468,6 +468,7 @@ app.use((err, req, res, next) => {
     "X-Requested-With, content-type, authorization"
   );
   next();
+});
 
 
 // app.use(express.static(path.join(__dirname, "./frontend/dist")));
