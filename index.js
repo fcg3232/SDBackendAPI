@@ -43,7 +43,6 @@ const ObjectId = mongoose.Types.ObjectId;
 // app.use(express.json());
 // app.use(bodyParser.raw({ type: "application/json" }));
 
-// CORS configuration
 const allowedOrigins = [
   "https://www.app.secondarydao.com",
   "https://www.secondarydao.com",
@@ -52,18 +51,22 @@ const allowedOrigins = [
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow requests with no origin (like mobile apps or curl requests)
-      if (!origin) return callback(null, true);
+      if (!origin) {
+        console.log("Request without origin allowed (server-to-server request).");
+        return callback(null, true);
+      }
 
       if (allowedOrigins.includes(origin)) {
-        callback(null, true); // Origin allowed
+        console.log(`CORS allowed for origin: ${origin}`);
+        callback(null, true);
       } else {
+        console.error(`CORS blocked for origin: ${origin}`);
         callback(new Error(`CORS blocked for origin: ${origin}`));
       }
     },
     methods: ['GET', 'POST', 'OPTIONS', 'PUT', 'DELETE'],
     allowedHeaders: ['Content-Type', 'Authorization'],
-    credentials: true, // If you need to allow cookies or authentication headers
+    credentials: true,
   })
 );
 
