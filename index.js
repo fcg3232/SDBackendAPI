@@ -81,6 +81,9 @@ app.use(
 app.use((err, req, res, next) => {
   if (err.message.includes("CORS")) {
     console.error("CORS Error Details:", err.message);
+    console.error("Request Headers:", req.headers);
+    console.error("Request Method:", req.method);
+    console.error("Request URL:", req.originalUrl);
     res.status(403).json({
       error: "CORS policy error",
       message: err.message,
