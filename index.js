@@ -52,40 +52,44 @@ const allowedOrigins = [
 app.use(
   cors({
     origin: (origin, callback) => {
+      // Log the incoming origin
+      console.log(`Incoming request from origin: ${origin || "No Origin (e.g., server-side or curl)"}`);
+
       if (!origin) {
-        console.log("Request without origin allowed (server-to-server request).");
+        // Allow server-to-server requests or curl without an origin
+        console.log("No origin provided; allowing request (server-to-server or curl).");
         return callback(null, true);
       }
 
       if (allowedOrigins.includes(origin)) {
         console.log(`CORS allowed for origin: ${origin}`);
-        callback(null, true);
+        callback(null, true); // Allow the request
       } else {
-        console.error(`CORS blocked for origin: ${origin}`);
-        callback(new Error(`CORS blocked for origin: ${origin}`));
+        // Log the denied origin and why it was denied
+        const errorMessage = `CORS denied for origin: ${origin}. Not in allowedOrigins.`;
+        console.error(errorMessage);
+        callback(new Error(errorMessage)); // Deny the request
       }
     },
-    methods: ['GET', 'POST', 'OPTIONS', 'PUT', 'DELETE'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    methods: ["GET", "POST", "OPTIONS", "PUT", "DELETE"],
+    allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true,
   })
 );
 
-app.use((req, res, next) => {
-  const origin = req.headers.origin;
-  if (allowedOrigins.includes(origin)) {
-    res.setHeader("Access-Control-Allow-Origin", origin);
+// Error handling middleware for CORS
+app.use((err, req, res, next) => {
+  if (err.message.includes("CORS")) {
+    console.error("CORS Error Details:", err.message);
+    res.status(403).json({
+      error: "CORS policy error",
+      message: err.message,
+    });
+  } else {
+    next(err);
   }
-  res.setHeader(
-    "Access-Control-Allow-Methods",
-    "GET, POST, OPTIONS, PUT, PATCH, DELETE"
-  );
-  res.setHeader(
-    "Access-Control-Allow-Headers",
-    "X-Requested-With, content-type, authorization"
-  );
-  next();
 });
+
 
 const calculateAnnualCoC = async () => {
   const products = await Product.find();
