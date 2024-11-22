@@ -49,12 +49,21 @@ const allowedOrigins = [
   "https://www.secondarydao.com",
 ];
 
-// Dynamically set CORS origin
 app.use(
   cors({
-    origin: 'https://www.app.secondarydao.com', // Only allow this domain
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps or curl requests)
+      if (!origin) return callback(null, true);
+
+      if (allowedOrigins.includes(origin)) {
+        callback(null, true); // Origin allowed
+      } else {
+        callback(new Error("Not allowed by CORS")); // Origin not allowed
+      }
+    },
     methods: ['GET', 'POST', 'OPTIONS', 'PUT', 'DELETE'],
     allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true, // If you need to allow cookies or authentication headers
   })
 );
 
