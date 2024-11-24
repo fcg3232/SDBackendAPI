@@ -409,7 +409,15 @@ app.use(
   })
 );
 
-app.use(cors());
+// CORS middleware configuration
+app.use(
+  cors({
+    origin: "https://www.app.secondarydao.com", // Replace with your frontend URL
+    methods: ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"], // Include PATCH
+    allowedHeaders: ["Content-Type", "Authorization"], // Add other headers if necessary
+    credentials: true, // Optional if cookies/auth headers are involved
+  })
+);
 
 app.use(
   express.json({ extended: true, parameterLimit: 1000000000, limit: "50000mb" })
