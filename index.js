@@ -20,7 +20,7 @@ const blogRoute = require("./routes/blogdb");
 const categoryRoute = require("./routes/categorydb");
 const kycRouts = require("./routes/kyc");
 const emailRouts = require("./routes/sendemail");
-const ChangePasswordRouts = require("./routes/changePassword");
+// const ChangePasswordRouts = require("./routes/changePassword");
 const TermsofCondition = require("./routes/TermsofCondition");
 const buyerOrder = require("./routes/buyerOrder");
 const sellerOrder = require("./routes/sellerOrder");
@@ -488,7 +488,7 @@ app.use("/api/rent", Rentdb);
 // app.use("/api/kyc", bodyParser.raw({ type: "application/json" }), kycRouts);
 
 app.use("/api/sendemail", emailRouts);
-app.use("/api/ChangePassword", ChangePasswordRouts);
+// app.use("/api/ChangePassword", ChangePasswordRouts);
 app.use("/api/TermsofCondition", TermsofCondition);
 app.use("/api/buyerOrder", buyerOrder);
 app.use("/api/sellerOrder", sellerOrder);
