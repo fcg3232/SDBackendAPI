@@ -48,9 +48,14 @@ app.use(cors(corsOptions));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-app.options('*', cors(corsOptions));
+app.options('*', cors(corsOptions)); // Handle preflight requests
 
-
+app.use((req, res, next) => {
+  res.on('finish', () => {
+    console.log('Access-Control-Allow-Origin:', res.get('Access-Control-Allow-Origin'));
+  });
+  next();
+});
 
 require("dotenv").config();
 const ObjectId = mongoose.Types.ObjectId;
