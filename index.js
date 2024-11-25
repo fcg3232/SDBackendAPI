@@ -417,18 +417,11 @@ app.use(
 
 app.use(bodyParser.json({ limit: "50000mb" }));
 
-app.use((req, res, next) => {
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader(
-    "Access-Control-Allow-Methods",
-    "GET, POST, OPTIONS, PUT, PATCH, DELETE"
-  );
-  res.setHeader(
-    "Access-Control-Allow-Headers",
-    "X-Requested-With, content-type, authorization"
-  );
-  next();
-});
+app.use(cors({
+  origin: 'https://www.app.secondarydao.com', // Restrict origin if needed
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Specify allowed methods
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'], // Specify headers
+}));
 
 // app.use(express.static(path.join(__dirname, "./frontend/dist")));
 
