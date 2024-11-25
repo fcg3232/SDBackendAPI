@@ -421,6 +421,8 @@ app.use(cors({
   origin: 'https://www.app.secondarydao.com', // Restrict origin if needed
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Specify allowed methods
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'], // Specify headers
+  credentials: true, // Include this if cookies or authorization headers are needed
+
 }));
 
 // app.use(express.static(path.join(__dirname, "./frontend/dist")));
