@@ -524,6 +524,11 @@ app.get("/personaldb", (req, res) => {
 app.get("/users", (req, res) => {
   res.send(users);
 });
+
+app.get("/", (req, res) => {
+  res.send("Welcome to SecondaryDAO API!");
+});
+
 mongoose.set("strictQuery", false);
 const url = process.env.DB_URI;
 const port = process.env.PORT || 5000;
