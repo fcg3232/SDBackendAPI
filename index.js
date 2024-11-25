@@ -37,6 +37,21 @@ const cron = require('node-cron');
 const { deflateRaw } = require("zlib");
 const { json } = require("body-parser");
 const app = express();
+const corsOptions = {
+  origin: 'https://www.app.secondarydao.com', // Only allow this origin
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Allowed methods
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'], // Allowed headers
+  credentials: true, // If using cookies or authorization headers
+};
+
+app.use(cors(corsOptions));
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
+
+app.options('*', cors(corsOptions));
+
+
+
 require("dotenv").config();
 const ObjectId = mongoose.Types.ObjectId;
 // app.use(express.json());
@@ -416,13 +431,7 @@ app.use(
 
 app.use(bodyParser.json({ limit: "50000mb" }));
 
-app.use(cors({
-  origin: 'https://www.app.secondarydao.com', // Restrict origin if needed
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Specify allowed methods
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'], // Specify headers
-  credentials: true, // Include this if cookies or authorization headers are needed
 
-}));
 
 // app.use(express.static(path.join(__dirname, "./frontend/dist")));
 
