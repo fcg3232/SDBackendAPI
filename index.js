@@ -409,7 +409,6 @@ app.use(
   })
 );
 
-app.use(cors());
 
 app.use(
   express.json({ extended: true, parameterLimit: 1000000000, limit: "50000mb" })
