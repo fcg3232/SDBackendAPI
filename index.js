@@ -430,31 +430,19 @@ app.use(
     },
   })
 );
-app.use(
-  bodyParser.urlencoded({
-    limit: "50000mb",
-    extended: true,
-    parameterLimit: 50000,
-  })
-);
 
-const allowedOrigins = ['https://www.app.secondarydao.com', 'https://www.admin.secondarydao.com'];
-app.use(cors({
-  origin: function (origin, callback) {
-    if (allowedOrigins.includes(origin) || !origin) {
-      callback(null, origin);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
-  credentials: true,
-}));
+// const allowedOrigins = ['https://www.app.secondarydao.com', 'https://www.admin.secondarydao.com'];
+// app.use(cors({
+//   origin: function (origin, callback) {
+//     if (allowedOrigins.includes(origin) || !origin) {
+//       callback(null, origin);
+//     } else {
+//       callback(new Error('Not allowed by CORS'));
+//     }
+//   },
+//   credentials: true,
+// }));
 
-app.use(
-  express.json({ extended: true, parameterLimit: 1000000000, limit: "50000mb" })
-);
-
-app.use(bodyParser.json({ limit: "50000mb" }));
 
 
 
