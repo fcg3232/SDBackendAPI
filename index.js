@@ -428,13 +428,13 @@ const cornUpdateSelling = async () => {
 }
 cornUpdateSelling();
 
-app.use(
-  bodyParser.json({
-    verify: (req, res, buf) => {
-      req.rawBody = buf;
-    },
-  })
-);
+// app.use(
+//   bodyParser.json({
+//     verify: (req, res, buf) => {
+//       req.rawBody = buf;
+//     },
+//   })
+// );
 
 // const allowedOrigins = ['https://www.app.secondarydao.com', 'https://www.admin.secondarydao.com','http://localhost:3000'];
 // app.use(cors({
