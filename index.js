@@ -20,7 +20,7 @@ const blogRoute = require("./routes/blogdb");
 const categoryRoute = require("./routes/categorydb");
 const kycRouts = require("./routes/kyc");
 const emailRouts = require("./routes/sendemail");
-// const ChangePasswordRouts = require("./routes/changePassword");
+const ChangePasswordRouts = require("./routes/changePassword");
 const TermsofCondition = require("./routes/TermsofCondition");
 const buyerOrder = require("./routes/buyerOrder");
 const sellerOrder = require("./routes/sellerOrder");
@@ -37,30 +37,48 @@ const cron = require('node-cron');
 const { deflateRaw } = require("zlib");
 const { json } = require("body-parser");
 const app = express();
-const corsOptions = {
-  origin: 'https://www.app.secondarydao.com', // Only allow this origin
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Allowed methods
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'], // Allowed headers
-  credentials: true, // If using cookies or authorization headers
-};
-
-app.use(cors(corsOptions));
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
-
-app.options('*', cors(corsOptions)); // Handle preflight requests
-
-app.use((req, res, next) => {
-  res.on('finish', () => {
-    console.log('Access-Control-Allow-Origin:', res.get('Access-Control-Allow-Origin'));
-  });
-  next();
-});
-
 require("dotenv").config();
 const ObjectId = mongoose.Types.ObjectId;
-// app.use(express.json());
-// app.use(bodyParser.raw({ type: "application/json" }));
+
+// const allowedOrigins = {
+//   origin: [
+//     'https://www.app.secondarydao.com',
+//     'https://www.admin.secondarydao.com'
+//   ],
+//   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Allowed methods
+//   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'], // Allowed headers
+//   credentials: true, // If using cookies or authorization headers
+// }
+
+// app.use(cors({
+//   origin: function (origin, callback) {
+//     if (allowedOrigins.includes(origin) || !origin) {
+//       callback(null, origin);
+//     } else {
+//       callback(new Error('Not allowed by CORS'));
+//     }
+//   },
+//   credentials: true,
+// }));
+// const corsOptions = {
+//   origin: 'https://www.app.secondarydao.com', // Only allow this origin
+//   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Allowed methods
+//   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'], // Allowed headers
+//   credentials: true, // If using cookies or authorization headers
+// };
+
+// app.use(cors(corsOptions));
+
+// app.options('*', cors(corsOptions)); // Handle preflight requests
+
+// app.use((req, res, next) => {
+//   res.on('finish', () => {
+//     console.log('Access-Control-Allow-Origin:', res.get('Access-Control-Allow-Origin'));
+//   });
+//   next();
+// });
+
+
 
 const calculateAnnualCoC = async () => {
   const products = await Product.find();
@@ -70,7 +88,7 @@ const calculateAnnualCoC = async () => {
     if (rentalIncome.length > 0) {
       for (let j = 0; j < rentalIncome.length; j++) {
         // det.push(rentalIncome)
-        
+
         const Expenses = await Expense.find({
           propertyId: products[i]._id,
           year: rentalIncome[j].year
@@ -78,7 +96,7 @@ const calculateAnnualCoC = async () => {
         // console.log(Expenses[0].totalExpense)
         // console.log(Expenses)
         if (Expenses) {
-          const cal = ((rentalIncome[j].annualRentalIncome - Expenses[0].totalExpense) / (products[i].purchasePrice / 1e8 + products[i].listingfee/ 1e8 + products[i].InitialReserves/ 1e8)) * 100 ;
+          const cal = ((rentalIncome[j].annualRentalIncome - Expenses[0].totalExpense) / (products[i].purchasePrice / 1e8 + products[i].listingfee / 1e8 + products[i].InitialReserves / 1e8)) * 100;
 
           await Rent.findByIdAndUpdate(
             rentalIncome[j]._id,
@@ -102,7 +120,7 @@ const calculateRentalYeild = async () => {
     if (rentalIncome.length > 0) {
       for (let j = 0; j < rentalIncome.length; j++) {
         // det.push(rentalIncome)
-        
+
         const Expenses = await Expense.find({
           propertyId: products[i]._id,
           year: rentalIncome[j].year
@@ -110,7 +128,7 @@ const calculateRentalYeild = async () => {
         // console.log(Expenses[0].totalExpense)
         // console.log(Expenses)
         if (Expenses) {
-          const cal = ((rentalIncome[j].annualRentalIncome - Expenses[0].totalExpense) / (products[i].purchasePrice / 1e8)) * 100 ;
+          const cal = ((rentalIncome[j].annualRentalIncome - Expenses[0].totalExpense) / (products[i].purchasePrice / 1e8)) * 100;
 
           await Rent.findByIdAndUpdate(
             rentalIncome[j]._id,
@@ -430,11 +448,12 @@ app.use(
 );
 
 
+app.use(cors());
 app.use(
   express.json({ extended: true, parameterLimit: 1000000000, limit: "50000mb" })
 );
-
 app.use(bodyParser.json({ limit: "50000mb" }));
+app.use(bodyParser.urlencoded({ limit: '50000mb', extended: true, parameterLimit: 50000 }));
 
 
 
@@ -488,7 +507,7 @@ app.use("/api/rent", Rentdb);
 // app.use("/api/kyc", bodyParser.raw({ type: "application/json" }), kycRouts);
 
 app.use("/api/sendemail", emailRouts);
-// app.use("/api/ChangePassword", ChangePasswordRouts);
+app.use("/api/ChangePassword", ChangePasswordRouts);
 app.use("/api/TermsofCondition", TermsofCondition);
 app.use("/api/buyerOrder", buyerOrder);
 app.use("/api/sellerOrder", sellerOrder);
