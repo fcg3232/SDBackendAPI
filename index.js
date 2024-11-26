@@ -431,17 +431,17 @@ app.use(
   })
 );
 
-// const allowedOrigins = ['https://www.app.secondarydao.com', 'https://www.admin.secondarydao.com'];
-// app.use(cors({
-//   origin: function (origin, callback) {
-//     if (allowedOrigins.includes(origin) || !origin) {
-//       callback(null, origin);
-//     } else {
-//       callback(new Error('Not allowed by CORS'));
-//     }
-//   },
-//   credentials: true,
-// }));
+const allowedOrigins = ['https://www.app.secondarydao.com', 'https://www.admin.secondarydao.com','http://localhost:3000'];
+app.use(cors({
+  origin: function (origin, callback) {
+    if (allowedOrigins.includes(origin) || !origin) {
+      callback(null, origin);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+}));
 
 
 
