@@ -60,12 +60,12 @@ app.use(bodyParser.urlencoded({ limit: '50000mb', extended: true, parameterLimit
 
 // app.options('*', cors(corsOptions)); // Handle preflight requests
 
-app.use((req, res, next) => {
-  res.on('finish', () => {
-    console.log('Access-Control-Allow-Origin:', res.get('Access-Control-Allow-Origin'));
-  });
-  next();
-});
+// app.use((req, res, next) => {
+//   res.on('finish', () => {
+//     console.log('Access-Control-Allow-Origin:', res.get('Access-Control-Allow-Origin'));
+//   });
+//   next();
+// });
 
 
 // app.use(express.json());
@@ -431,17 +431,17 @@ app.use(
   })
 );
 
-const allowedOrigins = ['https://www.app.secondarydao.com', 'https://www.admin.secondarydao.com','http://localhost:3000'];
-app.use(cors({
-  origin: function (origin, callback) {
-    if (allowedOrigins.includes(origin) || !origin) {
-      callback(null, origin);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
-  credentials: true,
-}));
+// const allowedOrigins = ['https://www.app.secondarydao.com', 'https://www.admin.secondarydao.com','http://localhost:3000'];
+// app.use(cors({
+//   origin: function (origin, callback) {
+//     if (allowedOrigins.includes(origin) || !origin) {
+//       callback(null, origin);
+//     } else {
+//       callback(new Error('Not allowed by CORS'));
+//     }
+//   },
+//   credentials: true,
+// }));
 
 
 
