@@ -49,10 +49,10 @@ const ObjectId = mongoose.Types.ObjectId;
 
 
 app.use(cors());
-app.use((req, res, next) => {
-  res.header({"Access-Control-Allow-Origin": "*"});
-  next();
-}) 
+// app.use((req, res, next) => {
+//   res.header({"Access-Control-Allow-Origin": "*"});
+//   next();
+// }) 
 
 app.use(
   express.json({ extended: true, parameterLimit: 1000000000, limit: "50000mb" })
