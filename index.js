@@ -30,35 +30,41 @@ const { Expense } = require("./models/expense");
 const { Rent } = require("./models/rent");
 const PropertyABI = require("./contract/Property.json");
 const EscrowABI = require("./contract/Escrow.json");
-const Web3 = require('web3');
+const Web3 = require("web3");
 const Infura_url = process.env.Infura;
 const web3 = new Web3(Infura_url);
-const cron = require('node-cron');
+const cron = require("node-cron");
 const { deflateRaw } = require("zlib");
 const { json } = require("body-parser");
 const app = express();
 require("dotenv").config();
 const ObjectId = mongoose.Types.ObjectId;
-// const corsOptions = {
-//   origin: 'https://www.app.secondarydao.com', // Only allow this origin
-//   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Allowed methods
-//   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'], // Allowed headers
-//   credentials: true, // If using cookies or authorization headers
-// };
+const corsOptions = {
+  // origin: 'https://www.app.secondarydao.com', // Only allow this origin
+  origin: ["http://localhost:3000", "https://www.app.secondarydao.com"], // Allow localhost for dev
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"], // Allowed methods
+  allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"], // Allowed headers
+  credentials: true, // If using cookies or authorization headers
+};
 // app.use(cors(corsOptions));
 
-
-app.use(cors());
+app.use(cors(corsOptions));
 // app.use((req, res, next) => {
 //   res.header({"Access-Control-Allow-Origin": "*"});
 //   next();
-// }) 
+// })
 
 app.use(
   express.json({ extended: true, parameterLimit: 1000000000, limit: "50000mb" })
 );
 app.use(bodyParser.json({ limit: "50000mb" }));
-app.use(bodyParser.urlencoded({ limit: '50000mb', extended: true, parameterLimit: 50000 }));
+app.use(
+  bodyParser.urlencoded({
+    limit: "50000mb",
+    extended: true,
+    parameterLimit: 50000,
+  })
+);
 
 // app.use(bodyParser.json());
 // app.use(bodyParser.urlencoded({ extended: true }));
@@ -72,7 +78,6 @@ app.use(bodyParser.urlencoded({ limit: '50000mb', extended: true, parameterLimit
 //   next();
 // });
 
-
 // app.use(express.json());
 // app.use(bodyParser.raw({ type: "application/json" }));
 
@@ -84,30 +89,30 @@ const calculateAnnualCoC = async () => {
     if (rentalIncome.length > 0) {
       for (let j = 0; j < rentalIncome.length; j++) {
         // det.push(rentalIncome)
-        
+
         const Expenses = await Expense.find({
           propertyId: products[i]._id,
-          year: rentalIncome[j].year
+          year: rentalIncome[j].year,
         });
         // console.log(Expenses[0].totalExpense)
         // console.log(Expenses)
         if (Expenses) {
-          const cal = ((rentalIncome[j].annualRentalIncome - Expenses[0].totalExpense) / (products[i].purchasePrice / 1e8 + products[i].listingfee/ 1e8 + products[i].InitialReserves/ 1e8)) * 100 ;
+          const cal =
+            ((rentalIncome[j].annualRentalIncome - Expenses[0].totalExpense) /
+              (products[i].purchasePrice / 1e8 +
+                products[i].listingfee / 1e8 +
+                products[i].InitialReserves / 1e8)) *
+            100;
 
-          await Rent.findByIdAndUpdate(
-            rentalIncome[j]._id,
-            {
-              annualCoC: cal,
-            },
-          )
+          await Rent.findByIdAndUpdate(rentalIncome[j]._id, {
+            annualCoC: cal,
+          });
         }
       }
     }
-
   }
-
 };
-calculateAnnualCoC()
+calculateAnnualCoC();
 const calculateRentalYeild = async () => {
   const products = await Product.find();
   for (let i = 0; i < products.length; i++) {
@@ -116,38 +121,34 @@ const calculateRentalYeild = async () => {
     if (rentalIncome.length > 0) {
       for (let j = 0; j < rentalIncome.length; j++) {
         // det.push(rentalIncome)
-        
+
         const Expenses = await Expense.find({
           propertyId: products[i]._id,
-          year: rentalIncome[j].year
+          year: rentalIncome[j].year,
         });
         // console.log(Expenses[0].totalExpense)
         // console.log(Expenses)
         if (Expenses) {
-          const cal = ((rentalIncome[j].annualRentalIncome - Expenses[0].totalExpense) / (products[i].purchasePrice / 1e8)) * 100 ;
+          const cal =
+            ((rentalIncome[j].annualRentalIncome - Expenses[0].totalExpense) /
+              (products[i].purchasePrice / 1e8)) *
+            100;
 
-          await Rent.findByIdAndUpdate(
-            rentalIncome[j]._id,
-            {
-              rentalYield: cal,
-            },
-          )
+          await Rent.findByIdAndUpdate(rentalIncome[j]._id, {
+            rentalYield: cal,
+          });
         }
       }
     }
-
   }
-
 };
-
 
 // run after every 2 hours
 const cornupdateRentalYeild = async () => {
-  cron.schedule('0  */2 * * *', async () => {
+  cron.schedule("0  */2 * * *", async () => {
     await calculateRentalYeild();
-
-  })
-}
+  });
+};
 cornupdateRentalYeild();
 
 const calculateAnnualRent = async () => {
@@ -162,113 +163,99 @@ const calculateAnnualRent = async () => {
           {
             $match: {
               propertyId: ObjectId(rentalIncome[j].propertyId),
-              year: rentalIncome[j].year
-            }
+              year: rentalIncome[j].year,
+            },
           },
           {
-            $unwind: "$rent" // Deconstruct the rent array into individual documents
+            $unwind: "$rent", // Deconstruct the rent array into individual documents
           },
           {
             $group: {
               _id: null, // No specific grouping key needed
-              annualRentalIncome: { $sum: "$rent.amount" } // Sum the amount fields
-            }
-          }
-        ]);
-        await Rent.findByIdAndUpdate(
-          rentalIncome[j]._id,
-          {
-            annualRentalIncome: result[0].annualRentalIncome,
+              annualRentalIncome: { $sum: "$rent.amount" }, // Sum the amount fields
+            },
           },
-        )
+        ]);
+        await Rent.findByIdAndUpdate(rentalIncome[j]._id, {
+          annualRentalIncome: result[0].annualRentalIncome,
+        });
       }
     }
   }
-
 };
 // run after every 2 hours
 const cornupdateAnnualRent = async () => {
-  cron.schedule('0  */2 * * *', async () => {
+  cron.schedule("0  */2 * * *", async () => {
     await calculateAnnualRent();
-
-  })
-}
+  });
+};
 cornupdateAnnualRent();
 
 const calculateTotalExpense = async () => {
   const products = await Product.find();
   for (let i = 0; i < products.length; i++) {
     const Expenses = await Expense.find({ propertyId: products[i]._id });
-    console.log(Expenses.length)
+    console.log(Expenses.length);
     for (let j = 0; j < Expenses.length; j++) {
       if (Expenses.length > 0) {
         const result = await Expense.aggregate([
           {
             $match: {
               propertyId: ObjectId(Expenses[j].propertyId),
-              year: Expenses[j].year
-            }
+              year: Expenses[j].year,
+            },
           },
           {
-            $unwind: "$expenses" // Deconstruct the expenses array into individual documents
+            $unwind: "$expenses", // Deconstruct the expenses array into individual documents
           },
           {
             $group: {
               _id: null, // No specific grouping key needed
-              totalExpense: { $sum: "$expenses.amount" } // Sum the amount fields
-            }
-          }
-        ]);
-        await Expense.findByIdAndUpdate(
-          Expenses[j]._id,
-          {
-            totalExpense: result[0].totalExpense,
+              totalExpense: { $sum: "$expenses.amount" }, // Sum the amount fields
+            },
           },
-        )
+        ]);
+        await Expense.findByIdAndUpdate(Expenses[j]._id, {
+          totalExpense: result[0].totalExpense,
+        });
       }
     }
   }
-
 };
 
 // run after every 2 hours
 const cornupdateExpense = async () => {
-  cron.schedule('0  */2 * * *', async () => {
+  cron.schedule("0  */2 * * *", async () => {
     await calculateTotalExpense();
-
-  })
-}
+  });
+};
 cornupdateExpense();
-
-
 
 const fetchPropertyDetails = async () => {
   try {
     const products = await Product.find();
     for (let i = 0; i < products.length; i++) {
       const Contract = new web3.eth.Contract(PropertyABI, products[i].uid);
-      const det = await Contract?.methods.getCompletePropDetails().call({ from: products[i].AdminWallet });
-      await Product.findByIdAndUpdate(
-        products[i]._id,
-        {
-          listingfee: det.PropertyDetails.ListingFee,
-          InitialReserves: det.PropertyDetails.InitialManagementReserves,
-          purchasePrice: det.PropertyDetails.PurchasePrice,
-        },
-      )
+      const det = await Contract?.methods
+        .getCompletePropDetails()
+        .call({ from: products[i].AdminWallet });
+      await Product.findByIdAndUpdate(products[i]._id, {
+        listingfee: det.PropertyDetails.ListingFee,
+        InitialReserves: det.PropertyDetails.InitialManagementReserves,
+        purchasePrice: det.PropertyDetails.PurchasePrice,
+      });
     }
     // }
-
   } catch (error) {
     console.log(error.message);
   }
-}
+};
 
 const cornupdatePropertyDetails = async () => {
-  cron.schedule('0 0 * * *', async () => {
+  cron.schedule("0 0 * * *", async () => {
     await fetchPropertyDetails();
-  })
-}
+  });
+};
 cornupdatePropertyDetails();
 
 const fetchTokenBalance = async () => {
@@ -276,36 +263,33 @@ const fetchTokenBalance = async () => {
     const products = await Product.find();
     for (let i = 0; i < products.length; i++) {
       const Contract = new web3.eth.Contract(PropertyABI, products[i].uid);
-      const address = await Contract?.methods.EscrowContractAddress().call({ from: products[i].AdminWallet });
+      const address = await Contract?.methods
+        .EscrowContractAddress()
+        .call({ from: products[i].AdminWallet });
       if (address != 0x0000000000000000000000000000000000000000) {
         const EscrowContract = new web3.eth.Contract(EscrowABI, address);
-        const check = await EscrowContract?.methods.Balance().call({ from: products[i].AdminWallet });
-        await Product.findByIdAndUpdate(
-          products[i]._id,
-          {
-            tokenBlance: check,
-          },
-        )
+        const check = await EscrowContract?.methods
+          .Balance()
+          .call({ from: products[i].AdminWallet });
+        await Product.findByIdAndUpdate(products[i]._id, {
+          tokenBlance: check,
+        });
       } else {
-        await Product.findByIdAndUpdate(
-          products[i]._id,
-          {
-            tokenBlance: 0,
-          },
-        )
+        await Product.findByIdAndUpdate(products[i]._id, {
+          tokenBlance: 0,
+        });
       }
     }
   } catch (error) {
     console.log(error.message);
   }
-}
-
+};
 
 const cornupdateTokenBalance = async () => {
-  cron.schedule('0  */2 * * *', async () => {
+  cron.schedule("0  */2 * * *", async () => {
     await fetchTokenBalance();
-  })
-}
+  });
+};
 cornupdateTokenBalance();
 
 const fetchTotalSupply = async () => {
@@ -313,35 +297,33 @@ const fetchTotalSupply = async () => {
     const products = await Product.find();
     for (let i = 0; i < products.length; i++) {
       const Contract = new web3.eth.Contract(PropertyABI, products[i].uid);
-      const address = await Contract?.methods.EscrowContractAddress().call({ from: products[i].AdminWallet });
+      const address = await Contract?.methods
+        .EscrowContractAddress()
+        .call({ from: products[i].AdminWallet });
       if (address != 0x0000000000000000000000000000000000000000) {
         const EscrowContract = new web3.eth.Contract(EscrowABI, address);
-        const check = await EscrowContract?.methods.TotalToken().call({ from: products[i].AdminWallet });
-        await Product.findByIdAndUpdate(
-          products[i]._id,
-          {
-            totalSupply: check,
-          },
-        )
+        const check = await EscrowContract?.methods
+          .TotalToken()
+          .call({ from: products[i].AdminWallet });
+        await Product.findByIdAndUpdate(products[i]._id, {
+          totalSupply: check,
+        });
       } else {
-        await Product.findByIdAndUpdate(
-          products[i]._id,
-          {
-            totalSupply: 0,
-          },
-        )
+        await Product.findByIdAndUpdate(products[i]._id, {
+          totalSupply: 0,
+        });
       }
     }
   } catch (error) {
     console.log(error.message);
   }
-}
+};
 
 const cornupdateTotalSupply = async () => {
-  cron.schedule('0  */2 * * *', async () => {
+  cron.schedule("0  */2 * * *", async () => {
     await fetchTotalSupply();
-  })
-}
+  });
+};
 cornupdateTotalSupply();
 
 // Update Token Price
@@ -350,27 +332,25 @@ const fetchTtokenPrice = async () => {
     const products = await Product.find();
     for (let i = 0; i < products.length; i++) {
       const Contract = new web3.eth.Contract(PropertyABI, products[i].uid);
-      const check = await Contract?.methods.TokenPrice().call({ from: products[i].AdminWallet });
-      await Product.findByIdAndUpdate(
-        products[i]._id,
-        {
-          tokenPrice: check,
-        },
-      )
+      const check = await Contract?.methods
+        .TokenPrice()
+        .call({ from: products[i].AdminWallet });
+      await Product.findByIdAndUpdate(products[i]._id, {
+        tokenPrice: check,
+      });
       // console.log("updatedord", updatedord)
     }
   } catch (error) {
     console.log(error.message);
   }
-}
-
+};
 
 // '*/2 * * * *'
 const cornupdateTokenPrice = async () => {
-  cron.schedule('0  */2 * * *', async () => {
+  cron.schedule("0  */2 * * *", async () => {
     await fetchTtokenPrice();
-  })
-}
+  });
+};
 cornupdateTokenPrice();
 
 // update ReSelling
@@ -379,27 +359,25 @@ const updateReSelling = async () => {
     const products = await Product.find();
     for (let i = 0; i < products.length; i++) {
       const Contract = new web3.eth.Contract(PropertyABI, products[i].uid);
-      const check = await Contract?.methods.isResell().call({ from: products[i].AdminWallet });
-      await Product.findByIdAndUpdate(
-        products[i]._id,
-        {
-          isReStartSelling: check,
-        },
-      )
+      const check = await Contract?.methods
+        .isResell()
+        .call({ from: products[i].AdminWallet });
+      await Product.findByIdAndUpdate(products[i]._id, {
+        isReStartSelling: check,
+      });
       // console.log("updatedord", updatedord)
     }
   } catch (error) {
     console.log(error.message);
   }
-}
+};
 
 const cornupdateReSelling = async () => {
-  cron.schedule('0  */2 * * *', async () => {
+  cron.schedule("0  */2 * * *", async () => {
     await updateReSelling();
-  })
-}
+  });
+};
 cornupdateReSelling();
-
 
 // update Start Selling
 const updateSelling = async () => {
@@ -407,25 +385,24 @@ const updateSelling = async () => {
     const products = await Product.find();
     for (let i = 0; i < products.length; i++) {
       const Contract = new web3.eth.Contract(PropertyABI, products[i].uid);
-      const check = await Contract?.methods.isStartsell().call({ from: products[i].AdminWallet });
-      await Product.findByIdAndUpdate(
-        products[i]._id,
-        {
-          isStartSelling: check,
-        },
-      )
+      const check = await Contract?.methods
+        .isStartsell()
+        .call({ from: products[i].AdminWallet });
+      await Product.findByIdAndUpdate(products[i]._id, {
+        isStartSelling: check,
+      });
       // console.log("updatedord", updatedord)
     }
   } catch (error) {
     console.log(error.message);
   }
-}
+};
 
 const cornUpdateSelling = async () => {
-  cron.schedule('0 0 * * *', async () => {
+  cron.schedule("0 0 * * *", async () => {
     await updateSelling();
-  })
-}
+  });
+};
 cornUpdateSelling();
 
 // app.use(
@@ -447,9 +424,6 @@ cornUpdateSelling();
 //   },
 //   credentials: true,
 // }));
-
-
-
 
 // app.use(express.static(path.join(__dirname, "./frontend/dist")));
 
@@ -507,7 +481,6 @@ app.use("/api/buyerOrder", buyerOrder);
 app.use("/api/sellerOrder", sellerOrder);
 app.use("/api/orderMatching", orderMatching);
 
-
 app.get("/orderMatching", (req, res) => {
   res.send(orderMatching);
 });
@@ -540,7 +513,6 @@ app.get("/personaldb", (req, res) => {
 app.get("/personaldb", (req, res) => {
   res.send(personaldb);
 });
-
 
 app.get("/users", (req, res) => {
   res.send(users);
