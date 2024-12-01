@@ -39,16 +39,15 @@ const { json } = require("body-parser");
 const app = express();
 require("dotenv").config();
 const ObjectId = mongoose.Types.ObjectId;
-const corsOptions = {
-  // origin: 'https://www.app.secondarydao.com', // Only allow this origin
-  origin: ["http://localhost:3000", "https://www.app.secondarydao.com"], // Allow localhost for dev
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"], // Allowed methods
-  allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"], // Allowed headers
-  credentials: true, // If using cookies or authorization headers
-};
+// const corsOptions = {
+//   origin: 'https://www.app.secondarydao.com', // Only allow this origin
+//   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Allowed methods
+//   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'], // Allowed headers
+//   credentials: true, // If using cookies or authorization headers
+// };
 // app.use(cors(corsOptions));
 
-app.use(cors(corsOptions));
+app.use(cors());
 // app.use((req, res, next) => {
 //   res.header({"Access-Control-Allow-Origin": "*"});
 //   next();
@@ -65,6 +64,19 @@ app.use(
     parameterLimit: 50000,
   })
 );
+
+app.use((req, res, next) => {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader(
+    "Access-Control-Allow-Methods",
+    "GET, POST, OPTIONS, PUT, PATCH, DELETE"
+  );
+  res.setHeader(
+    "Access-Control-Allow-Headers",
+    "X-Requested-With, content-type, authorization"
+  );
+  next();
+});
 
 // app.use(bodyParser.json());
 // app.use(bodyParser.urlencoded({ extended: true }));
