@@ -582,22 +582,13 @@ const app = express();
 require("dotenv").config();
 // app.use(express.json());
 // app.use(bodyParser.raw({ type: "application/json" }));
-app.use(
-  bodyParser.json({
-    verify: (req, res, buf) => {
-      req.rawBody = buf;
-    },
-  })
-);
-app.use(
-  bodyParser.urlencoded({
-    limit: "50000mb",
-    extended: true,
-    parameterLimit: 50000,
-  })
-);
 
-// app.use(cors());
+// app.use(express.static(path.join(__dirname, "./frontend/dist")));
+
+// app.get("/", (req, res) => {
+// 	res.sendFile(path.join(__dirname, "./frontend/dist/index.html"));
+// });
+
 const corsOptions = {
   origin: function (origin, callback) {
     const allowedOrigins = [
@@ -618,30 +609,22 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
-app.use(
-  express.json({ extended: true, parameterLimit: 1000000000, limit: "50000mb" })
-);
+app.options("*", cors(corsOptions));
 
 app.use(bodyParser.json({ limit: "50000mb" }));
+app.use(
+  bodyParser.urlencoded({
+    limit: "50000mb",
+    extended: true,
+    parameterLimit: 50000,
+  })
+);
 
 app.use((req, res, next) => {
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader(
-    "Access-Control-Allow-Methods",
-    "GET, POST, OPTIONS, PUT, PATCH, DELETE"
-  );
-  res.setHeader(
-    "Access-Control-Allow-Headers",
-    "X-Requested-With, content-type, authorization"
-  );
+  console.log(`Origin: ${req.headers.origin}`);
+  console.log(`Path: ${req.path}`);
   next();
 });
-
-// app.use(express.static(path.join(__dirname, "./frontend/dist")));
-
-// app.get("/", (req, res) => {
-// 	res.sendFile(path.join(__dirname, "./frontend/dist/index.html"));
-// });
 
 //.........................file upload using multer...................................//
 
