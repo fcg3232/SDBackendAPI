@@ -580,7 +580,6 @@ const orderMatching = require("./routes/orderMatching");
 
 const app = express();
 require("dotenv").config();
-app.use(cors());
 app.use(
   bodyParser.json({
     verify: (req, res, buf) => {
@@ -595,6 +594,8 @@ app.use(
     parameterLimit: 50000,
   })
 );
+
+app.use(cors());
 
 app.use(
   express.json({ extended: true, parameterLimit: 1000000000, limit: "50000mb" })
@@ -614,11 +615,11 @@ app.use((req, res, next) => {
   );
   next();
 });
-app.use((req, res, next) => {
-  console.log(`Origin: ${req.headers.origin}`);
-  console.log(`Path: ${req.path}`);
-  next();
-});
+// app.use((req, res, next) => {
+//   console.log(`Origin: ${req.headers.origin}`);
+//   console.log(`Path: ${req.path}`);
+//   next();
+// });
 
 //.........................file upload using multer...................................//
 
