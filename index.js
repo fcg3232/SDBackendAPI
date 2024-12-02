@@ -597,8 +597,27 @@ app.use(
   })
 );
 
-app.use(cors());
+// app.use(cors());
+const corsOptions = {
+  origin: function (origin, callback) {
+    const allowedOrigins = [
+      "https://www.app.secondarydao.com",
+      "https://www.admin.secondarydao.com",
+      "http://localhost:3000",
+    ];
 
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
+  credentials: true,
+};
+
+app.use(cors(corsOptions));
 app.use(
   express.json({ extended: true, parameterLimit: 1000000000, limit: "50000mb" })
 );
